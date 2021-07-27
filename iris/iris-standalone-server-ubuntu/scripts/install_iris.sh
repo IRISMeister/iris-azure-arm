@@ -71,4 +71,8 @@ if [ -e iris.key ]; then
 fi
 
 # Apply config settings and license (if any) 
-iris restart $ISC_PACKAGE_INSTANCENAME
+# Ocasionally license server fails to recognize it...
+# 2 [Utility.Event] LMF Error: License Server replied 'Invalid Key' to startup message. Server is incompatible with this product or key.
+# 0 [Generic.Event] LMFMON exited due to halt command executed
+sudo iris restart $ISC_PACKAGE_INSTANCENAME
+sleep 5
