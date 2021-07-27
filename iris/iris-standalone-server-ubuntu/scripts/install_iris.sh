@@ -1,6 +1,10 @@
 #!/bin/bash -e
 apt-get update
 
+echo $1 >> params.log
+echo $2 >> params.log
+echo $3 >> params.log
+echo $4 >> params.log
 
 # ++ edit here for optimal settings ++
 WRC_USERNAME=$1
@@ -62,9 +66,9 @@ popd
 rm -fR $kittemp
 
 # copy iris.key from secure location...
-wget "$3blob/iris.key?$4" -O iris.key -q
+wget "$3blob/iris.key?$4" -O iris.key
 if [ -e iris.key ]; then
-  mv iris.key $ISC_PACKAGE_INSTALLDIR/mgr/
+  cp iris.key $ISC_PACKAGE_INSTALLDIR/mgr/
 fi
 
 # Apply config settings and license (if any) 
