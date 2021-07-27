@@ -15,6 +15,8 @@ gmheap=37568
 ssport=51773
 webport=52773
 kittemp=/tmp/iriskit
+ISC_PACKAGE_MGRUSER=irisowner
+ISC_PACKAGE_IRISUSER=irisusr
 # -- edit here for optimal settings --
 
 # download iris binary kit
@@ -35,13 +37,13 @@ chmod og+rx $kittemp
 # requird for non-root install
 rm -fR $kittemp/$kit | true
 tar -xvf $kit.tar.gz -C $kittemp
-cp -fR manifest/ $kittemp/$kit
+cp -f Installer.cls/ $kittemp/$kit
 pushd $kittemp/$kit
 sudo ISC_PACKAGE_INSTANCENAME=$instance \
-ISC_PACKAGE_IRISGROUP=irisusr \
-ISC_PACKAGE_IRISUSER=irisusr \
-ISC_PACKAGE_MGRGROUP=irisowner \
-ISC_PACKAGE_MGRUSER=irisowner \
+ISC_PACKAGE_IRISGROUP=$ISC_PACKAGE_IRISUSER \
+ISC_PACKAGE_IRISUSER=$ISC_PACKAGE_IRISUSER \
+ISC_PACKAGE_MGRGROUP=$ISC_PACKAGE_MGRUSER \
+ISC_PACKAGE_MGRUSER=$ISC_PACKAGE_MGRUSER \
 ISC_PACKAGE_INSTALLDIR=$installdir \
 ISC_PACKAGE_UNICODE=Y \
 ISC_PACKAGE_INITIAL_SECURITY=Normal \
@@ -50,7 +52,7 @@ ISC_PACKAGE_CSPSYSTEM_PASSWORD=$password \
 ISC_PACKAGE_CLIENT_COMPONENTS= \
 ISC_PACKAGE_SUPERSERVER_PORT=$ssport \
 ISC_PACKAGE_WEBSERVER_PORT=$webport \
-ISC_INSTALLER_MANIFEST=$kittemp/$kit/manifest/Installer.cls \
+ISC_INSTALLER_MANIFEST=$kittemp/$kit/Installer.cls \
 ISC_INSTALLER_LOGFILE=installer_log \
 ISC_INSTALLER_LOGLEVEL=3 \
 ISC_INSTALLER_PARAMETERS=routines=$routines,locksiz=$locksiz,globals8k=$globals8k,gmheap=$gmheap \
