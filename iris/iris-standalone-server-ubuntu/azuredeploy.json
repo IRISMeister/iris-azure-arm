@@ -67,20 +67,6 @@
                 "description": "WRC password."
             }
         },
-        "licenseKeyLocation": {
-            "type": "string",
-            "metadata": {
-                "description": "The base URI where artifacts required by this template are located. When the template is deployed using the accompanying scripts, a private location in the subscription will be used and this value will be automatically generated."
-            },
-            "defaultValue": ""
-        },
-        "licenseKeyLocationSasToken": {
-            "type": "securestring",
-            "metadata": {
-                "description": "The sasToken required to access licenseKeyLocation."
-            },
-            "defaultValue": ""
-        },
         "_artifactsLocation": {
             "type": "string",
             "metadata": {
@@ -237,8 +223,7 @@
                 "settings": {
                     "fileUris": [
                         "[uri(parameters('_artifactsLocation'), concat('scripts/install_iris.sh', parameters('_artifactsLocationSasToken')))]",
-                        "[uri(parameters('_artifactsLocation'), concat('scripts/Installer.cls', parameters('_artifactsLocationSasToken')))]",
-                        "[uri(parameters('licenseKeyLocation'), concat('blob/abc.txt', parameters('licenseKeyLocationSasToken')))]"
+                        "[uri(parameters('_artifactsLocation'), concat('scripts/Installer.cls', parameters('_artifactsLocationSasToken')))]"
                     ],
                     "commandToExecute": "[concat('bash install_iris.sh', ' ', variables('singleQuote'),parameters('WRCUsername'),variables('singleQuote'), ' ', variables('singleQuote'),parameters('WRCPassword'),variables('singleQuote'))]"
                 }
