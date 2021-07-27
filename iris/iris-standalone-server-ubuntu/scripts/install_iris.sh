@@ -5,7 +5,6 @@ apt-get update
 WRC_USERNAME=$1
 WRC_PASSWORD=$2
 kit=IRIS-2021.1.0.215.0-lnxubuntux64
-instance=iris
 installdir=/usr/irissys
 password=sys
 globals8k=64
@@ -15,6 +14,7 @@ gmheap=37568
 ssport=51773
 webport=52773
 kittemp=/tmp/iriskit
+ISC_PACKAGE_INSTANCENAME=iris
 ISC_PACKAGE_MGRUSER=irisowner
 ISC_PACKAGE_IRISUSER=irisusr
 # -- edit here for optimal settings --
@@ -39,7 +39,7 @@ rm -fR $kittemp/$kit | true
 tar -xvf $kit.tar.gz -C $kittemp
 cp -f Installer.cls $kittemp/$kit; chmod 777 $kittemp/$kit/Installer.cls
 pushd $kittemp/$kit
-sudo ISC_PACKAGE_INSTANCENAME=$instance \
+sudo ISC_PACKAGE_INSTANCENAME=$ISC_PACKAGE_INSTANCENAME \
 ISC_PACKAGE_IRISGROUP=$ISC_PACKAGE_IRISUSER \
 ISC_PACKAGE_IRISUSER=$ISC_PACKAGE_IRISUSER \
 ISC_PACKAGE_MGRGROUP=$ISC_PACKAGE_MGRUSER \
