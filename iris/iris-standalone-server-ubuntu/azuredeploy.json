@@ -80,7 +80,19 @@
                 "description": "The sasToken required to access _artifactsLocation.  When the template is deployed using the accompanying scripts, a sasToken will be automatically generated."
             },
             "defaultValue": ""
-        }
+        },
+        "_secretsLocation": {
+            "type": "string",
+            "metadata": {
+              "description": "URL of the Standard storage account blob container to receive shared secrets and config files. (ie. https://mystandardstorage.blob.core.windows.net/artifactsfolder )"
+            }
+          },
+          "_secretsLocationSasToken": {
+            "type": "securestring",
+            "metadata": {
+              "description": "Generated Shared Acccess Signature token to access _secretsLocation"
+            }
+          }
     },
     "variables": {
         "imagePublisher": "Canonical",

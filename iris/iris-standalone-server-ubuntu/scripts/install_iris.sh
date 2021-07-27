@@ -1,6 +1,10 @@
 #!/bin/bash -e
 apt-get update
 
+echo $3 >> /tmp/params.log
+echo $4 >> /tmp/params.log
+echo "$3/blob/abc.txt?$4" >> /tmp/params.log
+
 # ++ edit here for optimal settings ++
 WRC_USERNAME=$1
 WRC_PASSWORD=$2
