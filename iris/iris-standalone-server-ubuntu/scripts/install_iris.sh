@@ -1,5 +1,5 @@
 #!/bin/bash -e
-sudo apt-get update
+apt-get update
 
 # ++ edit here for optimal settings ++
 WRC_USERNAME=$1
@@ -37,7 +37,7 @@ chmod og+rx $kittemp
 # requird for non-root install
 rm -fR $kittemp/$kit | true
 tar -xvf $kit.tar.gz -C $kittemp
-cp -f Installer.cls/ $kittemp/$kit
+cp -f Installer.cls $kittemp/$kit; chmod 777 $kittemp/$kit/Installer.cls
 pushd $kittemp/$kit
 sudo ISC_PACKAGE_INSTANCENAME=$instance \
 ISC_PACKAGE_IRISGROUP=$ISC_PACKAGE_IRISUSER \

@@ -1,3 +1,4 @@
+Include %occInclude
 Class Silent.Installer
 {
 
