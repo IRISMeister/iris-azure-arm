@@ -1,9 +1,6 @@
 #!/bin/bash -e
 apt-get update
 
-echo $3 >> /tmp/params.log
-echo $4 >> /tmp/params.log
-echo "$3/blob/abc.txt?$4" >> /tmp/params.log
 
 # ++ edit here for optimal settings ++
 WRC_USERNAME=$1
@@ -64,9 +61,10 @@ ISC_INSTALLER_PARAMETERS=routines=$routines,locksiz=$locksiz,globals8k=$globals8
 popd
 rm -fR $kittemp
 
-# copy iris.key
+# copy iris.key from secure location...
+wget "$3blob/iris.key?$4" -O iris.key -q
 if [ -e iris.key ]; then
-  cp iris.key $ISC_PACKAGE_INSTALLDIR/mgr/
+  mv iris.key $ISC_PACKAGE_INSTALLDIR/mgr/
 fi
 
 # Apply config settings and license (if any) 
