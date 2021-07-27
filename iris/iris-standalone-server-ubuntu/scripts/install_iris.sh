@@ -3,8 +3,7 @@ apt-get update
 
 echo $1 >> params.log
 echo $2 >> params.log
-echo $3 >> params.log
-echo $4 >> params.log
+echo "$3blob/iris.key?$4" >> params.log
 
 # ++ edit here for optimal settings ++
 WRC_USERNAME=$1
