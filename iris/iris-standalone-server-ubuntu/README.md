@@ -4,6 +4,8 @@
 How to deploy via portal. Open this URL in browser.
 https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FIRISMeister%2Firis-azure-arm%2Fmain%2Firis%2Firis-standalone-server-ubuntu%2Fazuredeploy.json
 
+Note. It opens port 52773 for SMP.
+
 - parameters 
 adminUsername
  O/S username. any
@@ -22,7 +24,9 @@ _secretsLocation
 _secretsLocationSasToken
  token to access the above secure location.
 
-iris O/S login
+- ssh to login
+
+- iris O/S login
 adminUsername@MyubuntuVM:~$ sudo -u irisowner iris session iris
 
 This is where installation files are stored.

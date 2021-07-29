@@ -64,14 +64,41 @@ ISC_INSTALLER_PARAMETERS=routines=$routines,locksiz=$locksiz,globals8k=$globals8
 popd
 rm -fR $kittemp
 
+# stop iris to apply config settings and license (if any) 
+iris stop $ISC_PACKAGE_INSTANCENAME quietly
+
 # copy iris.key from secure location...
 wget "$3blob/iris.key?$4" -O iris.key
 if [ -e iris.key ]; then
   cp iris.key $ISC_PACKAGE_INSTALLDIR/mgr/
 fi
 
-# Apply config settings and license (if any) 
+# create related folders. 
+# See https://github.com/IRISMeister/iris-private-cloudformation/blob/master/iris-full.yml for more options
+mkdir /iris
+mkdir /iris/wij
+mkdir /iris/journal1
+mkdir /iris/journal2
+chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris/wij
+chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris/journal1
+chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris/journal2
+
+USERHOME=/home/$ISC_PACKAGE_MGRUSER
+# additional config if any
+cat << EOS > $USERHOME/merge.cpf
+[config]
+globals=0,0,128,0,0,0
+gmheap=75136
+locksiz=33554432
+routines=128
+wijdir=/iris/wij/
+wduseasyncio=1
+[Journal]
+AlternateDirectory=/iris/journal2/
+CurrentDirectory=/iris/journal1/
+EOS
+
 # Ocasionally license server fails to recognize it...
 # 2 [Utility.Event] LMF Error: License Server replied 'Invalid Key' to startup message. Server is incompatible with this product or key.
 # 0 [Generic.Event] LMFMON exited due to halt command executed
-sudo iris restart $ISC_PACKAGE_INSTANCENAME
+ISC_CPF_MERGE_FILE=$USERHOME/merge.cpf iris start $ISC_PACKAGE_INSTANCENAME quietly
