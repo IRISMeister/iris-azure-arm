@@ -41,7 +41,94 @@ chmod og+rx $kittemp
 # requird for non-root install
 rm -fR $kittemp/$kit | true
 tar -xvf $kit.tar.gz -C $kittemp
-cp -f Installer.cls $kittemp/$kit; chmod 777 $kittemp/$kit/Installer.cls
+
+#; this is a here document of Installer.cls
+cat << EOS > $kittemp/$kit/Installer.cls
+Include %occInclude
+Class Silent.Installer
+{
+
+XData setup [ XMLNamespace = INSTALLER ]
+{
+<Manifest>
+  <Var Name="Namespace" Value="myapp"/>
+  <Var Name="Import" Value="0"/>
+
+  <If Condition='+"${routines}">0'>
+    <SystemSetting 
+      Name="Config.config.routines"
+      Value="${routines}"/>
+  </If>
+  <If Condition='+"${globals8k}">0'>
+    <SystemSetting 
+      Name="Config.config.globals8kb"
+      Value="${globals8k}"/>
+  </If>
+  <If Condition='+"${locksiz}">0'>
+    <SystemSetting 
+      Name="Config.config.locksiz"
+      Value="${locksiz}"/>
+  </If>
+  <If Condition='+"${gmheap}">0'>
+    <SystemSetting
+      Name="Config.config.gmheap"
+      Value="${gmheap}"/>
+  </If>
+
+<If Condition='(##class(Config.Namespaces).Exists("${Namespace}")=0)'>
+  <Log Text="Creating namespace ${Namespace}" Level="0"/>
+  <Namespace Name="${Namespace}" Create="yes" Code="${Namespace}" Ensemble="0" Data="${Namespace}">
+    <Configuration>
+      <Database Name="${Namespace}"
+        Dir="${MGRDIR}${Namespace}"
+        Create="overwrite"
+        Resource="%DB_${Namespace}"
+        PublicPermissions="RW"
+        MountAtStartup="true"/>
+    </Configuration>
+  </Namespace>
+  <Log Text="End Creating namespace ${Namespace}" Level="0"/>
+</If>
+
+<Namespace Name="${Namespace}" Create="no">
+  <CSPApplication Url="/csp/${Namespace}" Directory="${CSPDIR}${Namespace}" Resource=""/>
+</Namespace>
+
+<Namespace Name="${Namespace}" Create="no">
+  <CSPApplication Url="/csp/${Namespace}" Directory="${CSPDIR}${Namespace}" Resource=""/>
+</Namespace>
+
+<Namespace Name="%SYS" Create="no">
+  <Invoke Class="Silent.Installer" Method="setupExt" CheckStatus="1"/>
+</Namespace>
+
+</Manifest>
+}
+
+ClassMethod setup(ByRef pVars, pLogLevel As %Integer = 3, pInstaller As %Installer.Installer, pLogger As %Installer.AbstractLogger) As %Status [ CodeMode = objectgenerator, Internal ]
+{
+  Quit ##class(%Installer.Manifest).%Generate(%compiledclass, %code, "setup")
+}
+
+ClassMethod setupExt() As %Status
+{
+  Set tSC='$$$OK
+  Try {
+    Set tSC=##class(Security.System).Get(,.params)
+    $$$ThrowOnError(tSC)
+    Set params("AutheEnabled")=$ZHEX("7FF") ; Ebable O/S auth
+    Set tSC=##class(Security.System).Modify(,.params)
+    $$$ThrowOnError(tSC)
+  } Catch(e) {
+	  Set tSC=e.AsStatus()
+  }
+  Return tSC
+}
+}
+EOS
+chmod 777 $kittemp/$kit/Installer.cls
+
+
 pushd $kittemp/$kit
 sudo ISC_PACKAGE_INSTANCENAME=$ISC_PACKAGE_INSTANCENAME \
 ISC_PACKAGE_IRISGROUP=$ISC_PACKAGE_IRISUSER \
@@ -85,7 +172,7 @@ chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris/journal2
 
 USERHOME=/home/$ISC_PACKAGE_MGRUSER
 # additional config if any
-cat << EOS > $USERHOME/merge.cpf
+cat << EOS2 > $USERHOME/merge.cpf
 [config]
 globals=0,0,128,0,0,0
 gmheap=75136
@@ -96,7 +183,7 @@ wduseasyncio=1
 [Journal]
 AlternateDirectory=/iris/journal2/
 CurrentDirectory=/iris/journal1/
-EOS
+EOS2
 
 # Ocasionally license server fails to recognize it...
 # 2 [Utility.Event] LMF Error: License Server replied 'Invalid Key' to startup message. Server is incompatible with this product or key.

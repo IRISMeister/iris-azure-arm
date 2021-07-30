@@ -281,8 +281,7 @@
                 "autoUpgradeMinorVersion": true,
                 "settings": {
                     "fileUris": [
-                        "[uri(parameters('_artifactsLocation'), concat('scripts/install_iris.sh', parameters('_artifactsLocationSasToken')))]",
-                        "[uri(parameters('_artifactsLocation'), concat('scripts/Installer.cls', parameters('_artifactsLocationSasToken')))]"
+                        "[uri(parameters('_artifactsLocation'), concat('scripts/install_iris.sh', parameters('_artifactsLocationSasToken')))]"
                     ],
                     "commandToExecute": "[concat('bash install_iris.sh', ' ', variables('singleQuote'),parameters('WRCUsername'),variables('singleQuote'), ' ', variables('singleQuote'),parameters('WRCPassword'),variables('singleQuote'),' ',variables('singleQuote'),parameters('_secretsLocation'),variables('singleQuote'),' ',variables('singleQuote'),parameters('_secretsLocationSasToken'),variables('singleQuote'))]"
                 }
