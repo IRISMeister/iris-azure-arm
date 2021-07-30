@@ -43,7 +43,7 @@ rm -fR $kittemp/$kit | true
 tar -xvf $kit.tar.gz -C $kittemp
 
 #; this is a here document of Installer.cls
-cat << EOS > $kittemp/$kit/Installer.cls
+cat << 'EOS' > $kittemp/$kit/Installer.cls
 Include %occInclude
 Class Silent.Installer
 {
@@ -172,7 +172,7 @@ chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris/journal2
 
 USERHOME=/home/$ISC_PACKAGE_MGRUSER
 # additional config if any
-cat << EOS2 > $USERHOME/merge.cpf
+cat << 'EOS2' > $USERHOME/merge.cpf
 [config]
 globals=0,0,128,0,0,0
 gmheap=75136
@@ -183,7 +183,7 @@ wduseasyncio=1
 [Journal]
 AlternateDirectory=/iris/journal2/
 CurrentDirectory=/iris/journal1/
-EOS2
+'EOS2'
 
 # Ocasionally license server fails to recognize it...
 # 2 [Utility.Event] LMF Error: License Server replied 'Invalid Key' to startup message. Server is incompatible with this product or key.

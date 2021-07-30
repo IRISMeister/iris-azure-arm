@@ -124,13 +124,7 @@ install_iris_service() {
 install_iris_server() {
 #!/bin/bash -e
 
-echo $1 >> params.log
-echo $2 >> params.log
-echo "$3blob/iris.key?$4" >> params.log
-
 # ++ edit here for optimal settings ++
-WRC_USERNAME=$1
-WRC_PASSWORD=$2
 kit=IRIS-2021.1.0.215.0-lnxubuntux64
 password=sys
 globals8k=64
@@ -166,7 +160,7 @@ rm -fR $kittemp/$kit | true
 tar -xvf $kit.tar.gz -C $kittemp
 
 #; this is a here document of Installer.cls
-cat << EOS > $kittemp/$kit/Installer.cls
+cat << 'EOS' > $kittemp/$kit/Installer.cls
 Include %occInclude
 Class Silent.Installer
 {
@@ -294,7 +288,7 @@ chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris/journal2
 
 USERHOME=/home/$ISC_PACKAGE_MGRUSER
 # additional config if any
-cat << EOS > $USERHOME/merge.cpf
+cat << 'EOS2' > $USERHOME/merge.cpf
 [config]
 globals=0,0,128,0,0,0
 gmheap=75136
@@ -305,7 +299,7 @@ wduseasyncio=1
 [Journal]
 AlternateDirectory=/iris/journal2/
 CurrentDirectory=/iris/journal1/
-EOS
+'EOS2'
 
 # Ocasionally license server fails to recognize it...
 # 2 [Utility.Event] LMF Error: License Server replied 'Invalid Key' to startup message. Server is incompatible with this product or key.
@@ -422,7 +416,7 @@ install_iris_service
 setup_datadisks
 
 #service postgresql start
-iris start iris quietly
+#iris start iris quietly
 
 configure_streaming_replication
 
