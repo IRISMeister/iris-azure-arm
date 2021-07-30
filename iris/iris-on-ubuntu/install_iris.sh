@@ -28,7 +28,7 @@
 # You must be root to run this script
 if [ "${UID}" -ne 0 ];
 then
-    log "Script executed without root permissions"
+    logger "Script executed without root permissions"
     echo "You must be root to run this program." >&2
     exit 3
 fi
@@ -59,7 +59,7 @@ REPLICATORPASSWORD=""
 
 #Loop through options passed
 while getopts :m:s:t:p:U:P:L:T: optname; do
-    log "Option $optname set with value ${OPTARG}"
+    logger "Option $optname set with value ${OPTARG}"
   case $optname in
     m)
       MASTERIP=${OPTARG}
