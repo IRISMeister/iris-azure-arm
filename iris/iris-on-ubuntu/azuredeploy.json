@@ -4,7 +4,7 @@
   "parameters": {
     "domainName": {
       "type": "string",
-      "defaultValue": "[concat('postgres-', uniqueString(resourceGroup().id))]",
+      "defaultValue": "[concat('iris-', uniqueString(resourceGroup().id))]",
       "metadata": {
         "description": "Domain name of the public jumpbox"
       }
@@ -65,18 +65,6 @@
       "metadata": {
         "description": "Location for all resources."
       }
-    },
-    "WRCUsername": {
-      "type": "string",
-      "metadata": {
-          "description": "WRC Username."
-      }
-    },
-    "WRCPassword": {
-        "type": "securestring",
-        "metadata": {
-            "description": "WRC password."
-        }
     },
     "_artifactsLocation": {
       "type": "string",
@@ -283,12 +271,6 @@
           "dbType": {
             "value": "MASTER"
           },
-          "WRCUsername": {
-            "value": "[parameters('WRCUsername')]"
-          },
-          "WRCPassword": {
-            "value": "[parameters('WRCPassword')]"
-          },
           "_secretsLocation": {
             "value": "[parameters('_secretsLocation')]"
           },
@@ -344,12 +326,6 @@
           },
           "dbType": {
             "value": "SLAVE"
-          },
-          "WRCUsername": {
-            "value": "[parameters('WRCUsername')]"
-          },
-          "WRCPassword": {
-            "value": "[parameters('WRCPassword')]"
           },
           "_secretsLocation": {
             "value": "[parameters('_secretsLocation')]"

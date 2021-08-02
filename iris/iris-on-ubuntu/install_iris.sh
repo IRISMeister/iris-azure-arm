@@ -92,16 +92,11 @@ export SECRETSASTOKEN=$SECRETSASTOKEN
 
 logger "NOW=$now MASTERIP=$MASTERIP SUBNETADDRESS=$SUBNETADDRESS NODETYPE=$NODETYPE"
 
-# MAIN ROUTINE
-install_iris_service
 
 install_iris_service() {
 	logger "Start installing IRIS..."
 	# Re-synchronize the package index files from their sources. An update should always be performed before an upgrade.
 	apt-get -y update
-
-  #; setup storage 
-  chown irisowner:irisusr /datadisks/disk1/
 
 	install_iris_server
 
@@ -156,6 +151,9 @@ wget "${SECRETURL}blob/$kit.tar.gz?$SECRETSASTOKEN" -O $kit.tar.gz
 # add a user and group for iris
 useradd -m $ISC_PACKAGE_MGRUSER --uid 51773 | true
 useradd -m $ISC_PACKAGE_IRISUSER --uid 52773 | true
+
+#; change owner so that IRIS can create folders and database files
+chown irisowner:irisusr /datadisks/disk1/
 
 # install iris
 mkdir -p $kittemp
@@ -413,3 +411,7 @@ ClassMethod CreateMirroredDB(dbName As %String, dir As %String = "") As %Status
 EOS
 chmod 777 $kittemp/$kit/Installer.cls
 }
+
+# MAIN ROUTINE
+logger "calling install_iris_service"
+install_iris_service
