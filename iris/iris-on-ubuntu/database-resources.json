@@ -127,7 +127,7 @@
     },
     {
       "type": "Microsoft.Compute/virtualMachines/extensions",
-      "name": "[concat(variables('vmName'), copyindex(), '/install_postgresql')]",
+      "name": "[concat(variables('vmName'), copyindex(), '/install_iris')]",
       "apiVersion": "2019-12-01",
       "location": "[parameters('location')]",
       "dependsOn": [
