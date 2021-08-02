@@ -36,18 +36,6 @@ fi
 #Format the data disk
 bash vm-disk-utils-0.1.sh -s
 
-# TEMP FIX - Re-evaluate and remove when possible
-# This is an interim fix for hostname resolution in current VM (If it does not exist add it)
-grep -q "${HOSTNAME}" /etc/hosts
-if [ $? == 0 ];
-then
-  echo "${HOSTNAME}found in /etc/hosts"
-else
-  echo "${HOSTNAME} not found in /etc/hosts"
-  # Append it to the hsots file if not there
-  echo "127.0.0.1 ${HOSTNAME}" >> /etc/hosts
-fi
-
 # Get today's date into YYYYMMDD format
 now=$(date +"%Y%m%d")
 
@@ -200,9 +188,14 @@ mkdir /iris
 mkdir /iris/wij
 mkdir /iris/journal1
 mkdir /iris/journal2
+chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris
 chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris/wij
 chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris/journal1
 chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris/journal2
+
+# any better way?
+chmod 777 /iris/journal1
+chmod 777 /iris/journal1
 
 cat << 'EOS2' > /etc/systemd/system/iris.service
 [Unit]
@@ -249,13 +242,15 @@ sleep 2 &&
 echo "\nexecuting $IRIS_COMMAND_INIT_MIRROR" && 
 sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "$IRIS_COMMAND_INIT_MIRROR" &&
 # Without restart, FAILOVER member fails to retrieve (mirror) journal file...and retries forever...
-if [ "$INSTANCEROLE" == "FAILOVER" ]
+if [ "$NODETYPE" == "SLAVE" ]
 then
   sudo iris restart $ISC_PACKAGE_INSTANCENAME quietly
 fi
 sleep 2 &&
 echo "\nexecuting $IRIS_COMMAND_CREATE_DB" && 
 sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "$IRIS_COMMAND_CREATE_DB"
+
+# ToDo: maybe should restart by using systemctl...
 
 }
 
