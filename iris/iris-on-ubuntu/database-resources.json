@@ -23,9 +23,6 @@
     "dbType": {
       "type": "string"
     },
-    "dnsName": {
-      "type": "string"
-    },
     "location": {
       "type": "string"
     },
@@ -43,22 +40,9 @@
     "nicName": "[concat(variables('namespace'), 'nic')]",
     "adminUsername": "[parameters('commonSettings').adminUsername]",
     "vmCount": "[parameters('machineSettings').vmCount]",
-    "singleQuote": "'",
-    "publicIpName": "[concat('iris', 'publicIp')]"
+    "singleQuote": "'"
   },
   "resources": [
-    {
-      "apiVersion": "2019-11-01",
-      "type": "Microsoft.Network/publicIPAddresses",
-      "name": "[variables('publicIpName')]",
-      "location": "[parameters('location')]",
-      "properties": {
-        "publicIPAllocationMethod": "Dynamic",
-        "dnsSettings": {
-          "domainNameLabel": "[parameters('dnsName')]"
-        }
-      }
-    },
     {
       "apiVersion": "2019-11-01",
       "type": "Microsoft.Network/networkInterfaces",
@@ -74,9 +58,6 @@
             "name": "ipconfig1",
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
-              "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))]"
-              },
               "subnet": {
                 "id": "[variables('subnetRef')]"
               }
