@@ -40,6 +40,12 @@
     },
     "_secretsLocationSasToken": {
       "type": "securestring"
+    },
+    "_artifactsLocation": {
+      "type": "string"
+    },
+    "_artifactsLocationSasToken": {
+      "type": "securestring"
     }
   },
   "variables": {
@@ -149,7 +155,7 @@
           "fileUris": "[parameters('osSettings').scripts]"
         },
         "protectedSettings": {
-          "commandToExecute": "[concat('bash install_iris.sh -m ', parameters('masterIpAddress'), ' -s ', parameters('subnet').prefix, ' -t ', parameters('dbType') , ' -p ', parameters('replicatorPassword'),' -U ', variables('singleQuote'),parameters('WRCUsername'),variables('singleQuote'), ' -P ', variables('singleQuote'),parameters('WRCPassword'),variables('singleQuote'),' -L ',variables('singleQuote'),parameters('_secretsLocation'),variables('singleQuote'),' -T ',variables('singleQuote'),parameters('_secretsLocationSasToken'),variables('singleQuote') )]"
+          "commandToExecute": "[concat('bash install_iris.sh -m ', parameters('masterIpAddress'), ' -s ', parameters('subnet').prefix, ' -t ', parameters('dbType') , ' -p ', parameters('replicatorPassword'),' -U ', variables('singleQuote'),parameters('WRCUsername'),variables('singleQuote'), ' -P ', variables('singleQuote'),parameters('WRCPassword'),variables('singleQuote'),' -L ',variables('singleQuote'),parameters('_secretsLocation'),variables('singleQuote'),' -T ',variables('singleQuote'),parameters('_secretsLocationSasToken'),variables('singleQuote'),' -A ',variables('singleQuote'),parameters('_artifactsLocation'),variables('singleQuote'),' -S ',variables('singleQuote'),parameters('_artifactsLocationSasToken'),variables('singleQuote') )]"
         }
       }
     }

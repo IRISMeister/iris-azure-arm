@@ -1,7 +1,6 @@
 Include %occInclude
 Class Silent.Installer
 {
-
 XData setup [ XMLNamespace = INSTALLER ]
 {
 <Manifest>
@@ -57,10 +56,10 @@ ClassMethod setupExt() As %Status
 
 ClassMethod EnableMirroringService() As %Status
 {
-       do ##class(Security.Services).Get("%Service_Mirror", .p)
-       set p("Enabled") = 1
-       set sc=##class(Security.Services).Modify("%Service_Mirror", .p)
-       quit sc
+  do ##class(Security.Services).Get("%Service_Mirror", .p)
+  set p("Enabled") = 1
+  set sc=##class(Security.Services).Modify("%Service_Mirror", .p)
+  quit sc
 }
 
 ClassMethod CreateMirrorSet(ArbiterIP As %String) As %Status
