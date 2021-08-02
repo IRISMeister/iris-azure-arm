@@ -58,7 +58,7 @@ NODETYPE=""
 REPLICATORPASSWORD=""
 
 #Loop through options passed
-while getopts :m:s:t:p:U:P:L:T:A:S: optname; do
+while getopts :m:s:t:p:U:P:L:T: optname; do
     logger "Option $optname set with value ${OPTARG}"
   case $optname in
     m)
@@ -85,12 +85,6 @@ while getopts :m:s:t:p:U:P:L:T:A:S: optname; do
     T) #secret sas token
       SECRETSASTOKEN=${OPTARG}
       ;;
-    A) #artifact url
-      ARTIFACTURL=${OPTARG}
-      ;;
-    S) #artifact sas token
-      ARTIFACTSASTOKEN=${OPTARG}
-      ;;
     h)  #show help
       help
       exit 2
@@ -108,8 +102,6 @@ export WRC_USERNAME=$WRCUSERNAME
 export WRC_PASSWORD=$WRCPASSWORD
 export SECRETURL=$SECRETURL
 export SECRETSASTOKEN=$SECRETSASTOKEN
-export ARTIFACTURL=$ARTIFACTURL
-export ARTIFACTSASTOKEN=$ARTIFACTSASTOKEN
 
 logger "NOW=$now MASTERIP=$MASTERIP SUBNETADDRESS=$SUBNETADDRESS NODETYPE=$NODETYPE"
 
@@ -165,7 +157,7 @@ ISC_PACKAGE_IRISUSER=irisusr
 #    wget --secure-protocol=TLSv1_2 -O $kit.tar.gz --load-cookies cookie "https://wrc.intersystems.com/wrc/WRC.StreamServer.cls?FILE=/wrc/Live/ServerKits/$kit.tar.gz"
 #    rm -f cookie
 #fi
-wget "$ARTIFACTURLblob/$kit.tar.gz?$ARTIFACTSASTOKEN" -O $kit.tar.gz
+wget "$SECRETURLblob/$kit.tar.gz?$SECRETSASTOKEN" -O $kit.tar.gz
 
 # add a user and group for iris
 useradd -m $ISC_PACKAGE_MGRUSER --uid 51773 | true

@@ -303,12 +303,6 @@
           },
           "_secretsLocationSasToken": {
             "value": "[parameters('_secretsLocationSasToken')]"
-          },
-          "_artifactsLocation": {
-            "value": "[parameters('_artifactsLocation')]"
-          },
-          "_artifactsLocationSasToken": {
-            "value": "[parameters('_artifactsLocationSasToken')]"
           }
         }
       }
@@ -374,12 +368,6 @@
           },
           "_secretsLocationSasToken": {
             "value": "[parameters('_secretsLocationSasToken')]"
-          },
-          "_artifactsLocation": {
-            "value": "[parameters('_artifactsLocation')]"
-          },
-          "_artifactsLocationSasToken": {
-            "value": "[parameters('_artifactsLocationSasToken')]"
           }
         }
       }
