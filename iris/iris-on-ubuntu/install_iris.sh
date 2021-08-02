@@ -111,18 +111,29 @@ install_iris_service() {
 	# Re-synchronize the package index files from their sources. An update should always be performed before an upgrade.
 	apt-get -y update
 
-	# Install PostgreSQL if it is not yet installed
-	if [ $(dpkg-query -W -f='${Status}' postgresql 2>/dev/null | grep -c "ok installed") -eq 0 ];
-	then
-	  #apt-get -y install postgresql-10 postgresql-contrib-10 postgresql-client-10
-	  install_iris_server
-	fi
+	install_iris_server
 
 	logger "Start installing IRIS..."
 }
 
 install_iris_server() {
 #!/bin/bash -e
+
+
+if [ "$NODETYPE" == "MASTER" ];
+then
+  echo "Initializing as PRIMARY mirror member"
+  IRIS_COMMAND_INIT_MIRROR="##class(SE.ShardInstaller).CreateMirrorSet(\"${MirrorArbiterIP}\")"
+  IRIS_COMMAND_CREATE_DB="##class(SE.ShardInstaller).CreateMirroredDB(\"${MirrorDBName}\")"
+
+fi
+
+if [ "$NODETYPE" == "SLAVE" ];
+then
+  echo "Initializing as FAILOVER mirror member"
+  IRIS_COMMAND_INIT_MIRROR="##class(SE.ShardInstaller).JoinAsFailover(\"${MirrorPrimaryIP}\")"
+  IRIS_COMMAND_CREATE_DB="##class(SE.ShardInstaller).CreateMirroredDB(\"${MirrorDBName}\")"
+fi
 
 # ++ edit here for optimal settings ++
 kit=IRIS-2021.1.0.215.0-lnxubuntux64
@@ -171,27 +182,6 @@ XData setup [ XMLNamespace = INSTALLER ]
   <Var Name="Namespace" Value="myapp"/>
   <Var Name="Import" Value="0"/>
 
-  <If Condition='+"${routines}">0'>
-    <SystemSetting 
-      Name="Config.config.routines"
-      Value="${routines}"/>
-  </If>
-  <If Condition='+"${globals8k}">0'>
-    <SystemSetting 
-      Name="Config.config.globals8kb"
-      Value="${globals8k}"/>
-  </If>
-  <If Condition='+"${locksiz}">0'>
-    <SystemSetting 
-      Name="Config.config.locksiz"
-      Value="${locksiz}"/>
-  </If>
-  <If Condition='+"${gmheap}">0'>
-    <SystemSetting
-      Name="Config.config.gmheap"
-      Value="${gmheap}"/>
-  </If>
-
 <If Condition='(##class(Config.Namespaces).Exists("${Namespace}")=0)'>
   <Log Text="Creating namespace ${Namespace}" Level="0"/>
   <Namespace Name="${Namespace}" Create="yes" Code="${Namespace}" Ensemble="0" Data="${Namespace}">
@@ -210,11 +200,9 @@ XData setup [ XMLNamespace = INSTALLER ]
 <Namespace Name="${Namespace}" Create="no">
   <CSPApplication Url="/csp/${Namespace}" Directory="${CSPDIR}${Namespace}" Resource=""/>
 </Namespace>
-
 <Namespace Name="${Namespace}" Create="no">
   <CSPApplication Url="/csp/${Namespace}" Directory="${CSPDIR}${Namespace}" Resource=""/>
 </Namespace>
-
 <Namespace Name="%SYS" Create="no">
   <Invoke Class="Silent.Installer" Method="setupExt" CheckStatus="1"/>
 </Namespace>
@@ -241,6 +229,94 @@ ClassMethod setupExt() As %Status
   }
   Return tSC
 }
+
+ClassMethod EnableMirroringService() As %Status
+{
+       do ##class(Security.Services).Get("%Service_Mirror", .p)
+       set p("Enabled") = 1
+       set sc=##class(Security.Services).Modify("%Service_Mirror", .p)
+       quit sc
+}
+
+ClassMethod CreateMirrorSet(ArbiterIP As %String) As %Status
+{
+  set mirrorName="MIRRORSET"
+  set hostName=$system.INetInfo.HostNameToAddr($system.INetInfo.LocalHostName())
+  set systemName="MIRRORNODE01"
+  // Create mirror:
+  set mirror("UseSSL") = 0
+  if (ArbiterIP'="none") {
+    set mirror("ArbiterNode") = ArbiterIP_"|2188"
+    set mirror("ECPAddress") = hostName  // Windows on AWS need this
+  }
+  set sc = ##class(SYS.Mirror).CreateNewMirrorSet(mirrorName, systemName, .mirror)
+  write !,"Creating mirror "_mirrorName_"..."
+  if 'sc do $system.OBJ.DisplayError(sc)  
+  quit sc
+}
+
+ClassMethod JoinAsFailover(PrimaryNodeIP As %String) As %Status
+{
+  set mirrorName="MIRRORSET"
+  set hostName=$system.INetInfo.HostNameToAddr($system.INetInfo.LocalHostName())
+  set systemName="MIRRORNODE02"
+  // Join as failover:
+  set mirror("ECPAddress") = hostName  // Windows on AWS need this
+  set sc=##class(SYS.Mirror).JoinMirrorAsFailoverMember(mirrorName,systemName,"IRIS",PrimaryNodeIP,,.mirror)
+  write !,"Jonining mirror "_mirrorName_"...",!
+  if 'sc do $system.OBJ.DisplayError(sc)
+  quit sc
+}
+
+ClassMethod CreateMirroredDB(dbName As %String, dir As %String = "") As %Status
+{
+  if (dir="") { set dir="/iris/db/" }
+  set mirrorName="MIRRORSET"
+  
+  write !, "Creating databases and NS ",dbName,"...",!
+  
+  // Create the directory
+  do ##class(%Library.File).CreateDirectoryChain(dir)
+  do ##class(%Library.File).CreateNewDir(dir,dbName)
+  // Add DB to config
+  set Properties("Directory")=dir_dbName
+  do ##class(Config.Databases).Create(dbName,.Properties)
+  // Set the DB properties
+  set Properties("Directory")=dir_dbName
+  // wait until mirror is ready on this node
+  For i=1:1:10 {
+    h 1
+    Set mirrorStatus=$LIST($SYSTEM.Mirror.GetMemberStatus(mirrorName))
+    if mirrorStatus="Backup" Quit
+    if mirrorStatus="Primary" Quit
+  }
+  if ((mirrorStatus'="Primary")&(mirrorStatus'="Backup")) { 
+    write "Mirror failed to be ready: Mirror Status:"_mirrorStatus,!
+    quit '$$$OK
+  }
+
+  set rc = ##class(SYS.Database).CreateDatabase(dir_dbName,,,,,,dbName,mirrorName)
+  if 'rc { 
+    write !,"Database creation failed!"
+    do $system.OBJ.DisplayError(rc)
+    quit rc
+  }
+  
+  // Create namespace for mirrored database
+  set ns("Globals")=dbName
+  set ns("Routines")=dbName
+  do ##class(Config.Namespaces).Create(dbName,.ns)
+  set rc = ##class(Config.Namespaces).Exists(dbName,.obj,.status)
+  if 'rc {
+    write !, "NS creation failed."
+    do $system.OBJ.DisplayError(rc)
+    quit rc
+  }
+    
+  quit $$$OK
+}
+
+
 }
 EOS
 chmod 777 $kittemp/$kit/Installer.cls
@@ -262,7 +338,6 @@ ISC_PACKAGE_WEBSERVER_PORT=$webport \
 ISC_INSTALLER_MANIFEST=$kittemp/$kit/Installer.cls \
 ISC_INSTALLER_LOGFILE=installer_log \
 ISC_INSTALLER_LOGLEVEL=3 \
-ISC_INSTALLER_PARAMETERS=routines=$routines,locksiz=$locksiz,globals8k=$globals8k,gmheap=$gmheap \
 ./irisinstall_silent
 popd
 rm -fR $kittemp
@@ -286,9 +361,30 @@ chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris/wij
 chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris/journal1
 chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris/journal2
 
+cat << 'EOS2' > /etc/systemd/system/iris.service
+[Unit]
+Description=Intersystem IRIS Service
+After=network.target
+[Service]
+Type=forking
+WorkingDirectory=/iris/sys
+User=root
+ExecStart=/iris/sys/bin/iris start IRIS
+ExecStop=/iris/sys/bin/iris stop IRIS quietly
+Restart=on-abort
+[Install]
+WantedBy=default.target
+EOS2
+
+chmod 644 /etc/systemd/system/iris.service
+sudo systemctl daemon-reload &&
+sudo systemctl enable ISCAgent.service &&
+sudo systemctl start ISCAgent.service &&
+sudo systemctl enable iris &&
+
 USERHOME=/home/$ISC_PACKAGE_MGRUSER
 # additional config if any
-cat << 'EOS2' > $USERHOME/merge.cpf
+cat << 'EOS3' > $USERHOME/merge.cpf
 [config]
 globals=0,0,128,0,0,0
 gmheap=75136
@@ -299,12 +395,25 @@ wduseasyncio=1
 [Journal]
 AlternateDirectory=/iris/journal2/
 CurrentDirectory=/iris/journal1/
-'EOS2'
+EOS3
 
 # Ocasionally license server fails to recognize it...
 # 2 [Utility.Event] LMF Error: License Server replied 'Invalid Key' to startup message. Server is incompatible with this product or key.
 # 0 [Generic.Event] LMFMON exited due to halt command executed
-ISC_CPF_MERGE_FILE=$USERHOME/merge.cpf iris start $ISC_PACKAGE_INSTANCENAME quietly
+ISC_CPF_MERGE_FILE=$USERHOME/merge.cpf iris start $ISC_PACKAGE_INSTANCENAME quietly &&
+iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "##class(SE.ShardInstaller).EnableMirroringService()" &&
+sleep 2 &&
+echo "\nexecuting $IRIS_COMMAND_INIT_MIRROR" && 
+iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "$IRIS_COMMAND_INIT_MIRROR" &&
+# Without restart, FAILOVER member fails to retrieve (mirror) journal file...and retries forever...
+if [ "$INSTANCEROLE" == "FAILOVER" ]
+then
+  sudo iris restart $ISC_PACKAGE_INSTANCENAME quietly
+fi
+sleep 2 &&
+echo "\nexecuting $IRIS_COMMAND_CREATE_DB" && 
+iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "$IRIS_COMMAND_CREATE_DB"
+
 }
 
 setup_datadisks() {
@@ -413,13 +522,13 @@ configure_streaming_replication() {
 # MAIN ROUTINE
 install_iris_service
 
-setup_datadisks
+#setup_datadisks
 
 #service postgresql start
 #iris start iris quietly
 
-configure_streaming_replication
+#configure_streaming_replication
 
 #service postgresql start
-iris start iris quietly
+#iris start iris quietly
 

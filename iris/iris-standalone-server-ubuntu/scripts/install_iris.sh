@@ -54,27 +54,6 @@ XData setup [ XMLNamespace = INSTALLER ]
   <Var Name="Namespace" Value="myapp"/>
   <Var Name="Import" Value="0"/>
 
-  <If Condition='+"${routines}">0'>
-    <SystemSetting 
-      Name="Config.config.routines"
-      Value="${routines}"/>
-  </If>
-  <If Condition='+"${globals8k}">0'>
-    <SystemSetting 
-      Name="Config.config.globals8kb"
-      Value="${globals8k}"/>
-  </If>
-  <If Condition='+"${locksiz}">0'>
-    <SystemSetting 
-      Name="Config.config.locksiz"
-      Value="${locksiz}"/>
-  </If>
-  <If Condition='+"${gmheap}">0'>
-    <SystemSetting
-      Name="Config.config.gmheap"
-      Value="${gmheap}"/>
-  </If>
-
 <If Condition='(##class(Config.Namespaces).Exists("${Namespace}")=0)'>
   <Log Text="Creating namespace ${Namespace}" Level="0"/>
   <Namespace Name="${Namespace}" Create="yes" Code="${Namespace}" Ensemble="0" Data="${Namespace}">
@@ -146,7 +125,6 @@ ISC_PACKAGE_WEBSERVER_PORT=$webport \
 ISC_INSTALLER_MANIFEST=$kittemp/$kit/Installer.cls \
 ISC_INSTALLER_LOGFILE=installer_log \
 ISC_INSTALLER_LOGLEVEL=3 \
-ISC_INSTALLER_PARAMETERS=routines=$routines,locksiz=$locksiz,globals8k=$globals8k,gmheap=$gmheap \
 ./irisinstall_silent
 popd
 rm -fR $kittemp
