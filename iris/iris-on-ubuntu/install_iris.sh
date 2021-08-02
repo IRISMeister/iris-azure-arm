@@ -57,7 +57,7 @@ SUBNETADDRESS=""
 NODETYPE=""
 
 #Loop through options passed
-while getopts :m:s:t:U:P:L:T: optname; do
+while getopts :m:s:t:L:T: optname; do
     logger "Option $optname set with value ${OPTARG}"
   case $optname in
     m)
@@ -68,12 +68,6 @@ while getopts :m:s:t:U:P:L:T: optname; do
       ;;
     t) #Type of node (MASTER/SLAVE)
       NODETYPE=${OPTARG}
-      ;;
-    U) #WRC Username
-      WRCUSERNAME=${OPTARG}
-      ;;
-    P) #WRC Password
-      WRCPASSWORD=${OPTARG}
       ;;
     L) #secret url
       SECRETURL=${OPTARG}
@@ -93,18 +87,21 @@ while getopts :m:s:t:U:P:L:T: optname; do
   esac
 done
 
-export WRC_USERNAME=$WRCUSERNAME
-export WRC_PASSWORD=$WRCPASSWORD
 export SECRETURL=$SECRETURL
 export SECRETSASTOKEN=$SECRETSASTOKEN
 
 logger "NOW=$now MASTERIP=$MASTERIP SUBNETADDRESS=$SUBNETADDRESS NODETYPE=$NODETYPE"
 
+# MAIN ROUTINE
+install_iris_service
 
 install_iris_service() {
 	logger "Start installing IRIS..."
 	# Re-synchronize the package index files from their sources. An update should always be performed before an upgrade.
 	apt-get -y update
+
+  #; setup storage 
+  chown irisowner:irisusr /datadisks/disk1/
 
 	install_iris_server
 
@@ -114,6 +111,8 @@ install_iris_service() {
 install_iris_server() {
 #!/bin/bash -e
 
+export MirrorDBName='MYDB'
+export MirrorArbiterIP='none'
 
 if [ "$NODETYPE" == "MASTER" ];
 then
@@ -126,7 +125,7 @@ fi
 if [ "$NODETYPE" == "SLAVE" ];
 then
   echo "Initializing as FAILOVER mirror member"
-  IRIS_COMMAND_INIT_MIRROR="##class(Silent.Installer).JoinAsFailover(\"${MirrorPrimaryIP}\")"
+  IRIS_COMMAND_INIT_MIRROR="##class(Silent.Installer).JoinAsFailover(\"${MASTERIP}\")"
   IRIS_COMMAND_CREATE_DB="##class(Silent.Installer).CreateMirroredDB(\"${MirrorDBName}\")"
 fi
 
@@ -166,6 +165,103 @@ chmod og+rx $kittemp
 rm -fR $kittemp/$kit | true
 tar -xvf $kit.tar.gz -C $kittemp
 
+get_installer_cls
+pushd $kittemp/$kit
+sudo ISC_PACKAGE_INSTANCENAME=$ISC_PACKAGE_INSTANCENAME \
+ISC_PACKAGE_IRISGROUP=$ISC_PACKAGE_IRISUSER \
+ISC_PACKAGE_IRISUSER=$ISC_PACKAGE_IRISUSER \
+ISC_PACKAGE_MGRGROUP=$ISC_PACKAGE_MGRUSER \
+ISC_PACKAGE_MGRUSER=$ISC_PACKAGE_MGRUSER \
+ISC_PACKAGE_INSTALLDIR=$ISC_PACKAGE_INSTALLDIR \
+ISC_PACKAGE_UNICODE=Y \
+ISC_PACKAGE_INITIAL_SECURITY=Normal \
+ISC_PACKAGE_USER_PASSWORD=$password \
+ISC_PACKAGE_CSPSYSTEM_PASSWORD=$password \
+ISC_PACKAGE_CLIENT_COMPONENTS= \
+ISC_PACKAGE_SUPERSERVER_PORT=$ssport \
+ISC_PACKAGE_WEBSERVER_PORT=$webport \
+ISC_INSTALLER_MANIFEST=$kittemp/$kit/Installer.cls \
+ISC_INSTALLER_LOGFILE=installer_log \
+ISC_INSTALLER_LOGLEVEL=3 \
+./irisinstall_silent
+popd
+rm -fR $kittemp
+
+# stop iris to apply config settings and license (if any) 
+iris stop $ISC_PACKAGE_INSTANCENAME quietly
+
+# copy iris.key from secure location...
+wget "${SECRETURL}blob/iris.key?$SECRETSASTOKEN" -O iris.key
+if [ -e iris.key ]; then
+  cp iris.key $ISC_PACKAGE_INSTALLDIR/mgr/
+fi
+
+# create related folders. 
+# See https://github.com/IRISMeister/iris-private-cloudformation/blob/master/iris-full.yml for more options
+mkdir /iris
+mkdir /iris/wij
+mkdir /iris/journal1
+mkdir /iris/journal2
+chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris/wij
+chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris/journal1
+chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris/journal2
+
+cat << 'EOS2' > /etc/systemd/system/iris.service
+[Unit]
+Description=Intersystem IRIS Service
+After=network.target
+[Service]
+Type=forking
+WorkingDirectory=/iris/sys
+User=root
+ExecStart=/iris/sys/bin/iris start IRIS
+ExecStop=/iris/sys/bin/iris stop IRIS quietly
+Restart=on-abort
+[Install]
+WantedBy=default.target
+EOS2
+
+chmod 644 /etc/systemd/system/iris.service
+sudo systemctl daemon-reload &&
+sudo systemctl enable ISCAgent.service &&
+sudo systemctl start ISCAgent.service &&
+sudo systemctl enable iris &&
+
+USERHOME=/home/$ISC_PACKAGE_MGRUSER
+# additional config if any
+cat << 'EOS3' > $USERHOME/merge.cpf
+[config]
+globals=0,0,128,0,0,0
+gmheap=75136
+locksiz=33554432
+routines=128
+wijdir=/iris/wij/
+wduseasyncio=1
+[Journal]
+AlternateDirectory=/iris/journal2/
+CurrentDirectory=/iris/journal1/
+EOS3
+
+# Ocasionally license server fails to recognize it...
+# 2 [Utility.Event] LMF Error: License Server replied 'Invalid Key' to startup message. Server is incompatible with this product or key.
+# 0 [Generic.Event] LMFMON exited due to halt command executed
+ISC_CPF_MERGE_FILE=$USERHOME/merge.cpf iris start $ISC_PACKAGE_INSTANCENAME quietly
+sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "##class(Silent.Installer).EnableMirroringService()" &&
+sleep 2 &&
+echo "\nexecuting $IRIS_COMMAND_INIT_MIRROR" && 
+sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "$IRIS_COMMAND_INIT_MIRROR" &&
+# Without restart, FAILOVER member fails to retrieve (mirror) journal file...and retries forever...
+if [ "$INSTANCEROLE" == "FAILOVER" ]
+then
+  sudo iris restart $ISC_PACKAGE_INSTANCENAME quietly
+fi
+sleep 2 &&
+echo "\nexecuting $IRIS_COMMAND_CREATE_DB" && 
+sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "$IRIS_COMMAND_CREATE_DB"
+
+}
+
+get_installer_cls() {
 #; this is a here document of Installer.cls
 cat << 'EOS' > $kittemp/$kit/Installer.cls
 Include %occInclude
@@ -266,7 +362,7 @@ ClassMethod JoinAsFailover(PrimaryNodeIP As %String) As %Status
 
 ClassMethod CreateMirroredDB(dbName As %String, dir As %String = "") As %Status
 {
-  if (dir="") { set dir="/iris/db/" }
+  if (dir="") { set dir="/datadisks/disk1/iris/db/" }
   set mirrorName="MIRRORSET"
   
   write !, "Creating databases and NS ",dbName,"...",!
@@ -316,215 +412,4 @@ ClassMethod CreateMirroredDB(dbName As %String, dir As %String = "") As %Status
 }
 EOS
 chmod 777 $kittemp/$kit/Installer.cls
-
-pushd $kittemp/$kit
-sudo ISC_PACKAGE_INSTANCENAME=$ISC_PACKAGE_INSTANCENAME \
-ISC_PACKAGE_IRISGROUP=$ISC_PACKAGE_IRISUSER \
-ISC_PACKAGE_IRISUSER=$ISC_PACKAGE_IRISUSER \
-ISC_PACKAGE_MGRGROUP=$ISC_PACKAGE_MGRUSER \
-ISC_PACKAGE_MGRUSER=$ISC_PACKAGE_MGRUSER \
-ISC_PACKAGE_INSTALLDIR=$ISC_PACKAGE_INSTALLDIR \
-ISC_PACKAGE_UNICODE=Y \
-ISC_PACKAGE_INITIAL_SECURITY=Normal \
-ISC_PACKAGE_USER_PASSWORD=$password \
-ISC_PACKAGE_CSPSYSTEM_PASSWORD=$password \
-ISC_PACKAGE_CLIENT_COMPONENTS= \
-ISC_PACKAGE_SUPERSERVER_PORT=$ssport \
-ISC_PACKAGE_WEBSERVER_PORT=$webport \
-ISC_INSTALLER_MANIFEST=$kittemp/$kit/Installer.cls \
-ISC_INSTALLER_LOGFILE=installer_log \
-ISC_INSTALLER_LOGLEVEL=3 \
-./irisinstall_silent
-popd
-rm -fR $kittemp
-
-# stop iris to apply config settings and license (if any) 
-iris stop $ISC_PACKAGE_INSTANCENAME quietly
-
-# copy iris.key from secure location...
-wget "${SECRETURL}blob/iris.key?$SECRETSASTOKEN" -O iris.key
-if [ -e iris.key ]; then
-  cp iris.key $ISC_PACKAGE_INSTALLDIR/mgr/
-fi
-
-# create related folders. 
-# See https://github.com/IRISMeister/iris-private-cloudformation/blob/master/iris-full.yml for more options
-mkdir /iris
-mkdir /iris/wij
-mkdir /iris/journal1
-mkdir /iris/journal2
-chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris/wij
-chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris/journal1
-chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris/journal2
-
-cat << 'EOS2' > /etc/systemd/system/iris.service
-[Unit]
-Description=Intersystem IRIS Service
-After=network.target
-[Service]
-Type=forking
-WorkingDirectory=/iris/sys
-User=root
-ExecStart=/iris/sys/bin/iris start IRIS
-ExecStop=/iris/sys/bin/iris stop IRIS quietly
-Restart=on-abort
-[Install]
-WantedBy=default.target
-EOS2
-
-chmod 644 /etc/systemd/system/iris.service
-sudo systemctl daemon-reload &&
-sudo systemctl enable ISCAgent.service &&
-sudo systemctl start ISCAgent.service &&
-sudo systemctl enable iris &&
-
-USERHOME=/home/$ISC_PACKAGE_MGRUSER
-# additional config if any
-cat << 'EOS3' > $USERHOME/merge.cpf
-[config]
-globals=0,0,128,0,0,0
-gmheap=75136
-locksiz=33554432
-routines=128
-wijdir=/iris/wij/
-wduseasyncio=1
-[Journal]
-AlternateDirectory=/iris/journal2/
-CurrentDirectory=/iris/journal1/
-EOS3
-
-# Ocasionally license server fails to recognize it...
-# 2 [Utility.Event] LMF Error: License Server replied 'Invalid Key' to startup message. Server is incompatible with this product or key.
-# 0 [Generic.Event] LMFMON exited due to halt command executed
-ISC_CPF_MERGE_FILE=$USERHOME/merge.cpf iris start $ISC_PACKAGE_INSTANCENAME quietly
-sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "##class(Silent.Installer).EnableMirroringService()" &&
-sleep 2 &&
-echo "\nexecuting $IRIS_COMMAND_INIT_MIRROR" && 
-sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "$IRIS_COMMAND_INIT_MIRROR" &&
-# Without restart, FAILOVER member fails to retrieve (mirror) journal file...and retries forever...
-if [ "$INSTANCEROLE" == "FAILOVER" ]
-then
-  sudo iris restart $ISC_PACKAGE_INSTANCENAME quietly
-fi
-sleep 2 &&
-echo "\nexecuting $IRIS_COMMAND_CREATE_DB" && 
-sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "$IRIS_COMMAND_CREATE_DB"
-
 }
-
-setup_datadisks() {
-
-	MOUNTPOINT="/datadisks/disk1"
-
-	# Move database files to the striped disk
-	if [ -L /var/lib/postgresql/9.3/main ];
-	then
-		logger "Symbolic link from /var/lib/postgresql/9.3/main already exists"
-		echo "Symbolic link from /var/lib/postgresql/9.3/main already exists"
-	else
-		logger "Moving  data to the $MOUNTPOINT/main"
-		echo "Moving PostgreSQL data to the $MOUNTPOINT/main"
-		service postgresql stop
-		# mkdir $MOUNTPOINT/main
-		mv -f /var/lib/postgresql/9.3/main $MOUNTPOINT
-
-		# Create symbolic link so that configuration files continue to use the default folders
-		logger "Create symbolic link from /var/lib/postgresql/9.3/main to $MOUNTPOINT/main"
-		ln -s $MOUNTPOINT/main /var/lib/postgresql/9.3/main
-
-        chown postgres:postgres $MOUNTPOINT/main
-        chmod 0700 $MOUNTPOINT/main
-	fi
-}
-
-configure_streaming_replication() {
-	# use this entry for mirror setup. Primary and Backup.
-	logger "Starting configuring PostgreSQL streaming replication..."
-
-	# Configure the MASTER node
-	if [ "$NODETYPE" == "MASTER" ];
-	then
-		logger "Create user replicator..."
-		echo "CREATE USER replicator WITH REPLICATION PASSWORD '$PGPASSWORD';"
-		sudo -u postgres psql -c "CREATE USER replicator WITH REPLICATION PASSWORD '$PGPASSWORD';"
-	fi
-
-	# Stop service
-	service postgresql stop
-
-	# Update configuration files
-	cd /etc/postgresql/9.3/main
-
-	if grep -Fxq "# install_postgresql.sh" pg_hba.conf
-	then
-		logger "Already in pg_hba.conf"
-		echo "Already in pg_hba.conf"
-	else
-		# Allow access from other servers in the same subnet
-		echo "" >> pg_hba.conf
-		echo "# install_postgresql.sh" >> pg_hba.conf
-		echo "host replication replicator $SUBNETADDRESS md5" >> pg_hba.conf
-		echo "hostssl replication replicator $SUBNETADDRESS md5" >> pg_hba.conf
-		echo "" >> pg_hba.conf
-
-		logger "Updated pg_hba.conf"
-		echo "Updated pg_hba.conf"
-	fi
-
-	if grep -Fxq "# install_postgresql.sh" postgresql.conf
-	then
-		logger "Already in postgresql.conf"
-		echo "Already in postgresql.conf"
-	else
-		# Change configuration including both master and slave configuration settings
-		echo "" >> postgresql.conf
-		echo "# install_postgresql.sh" >> postgresql.conf
-		echo "listen_addresses = '*'" >> postgresql.conf
-		echo "wal_level = hot_standby" >> postgresql.conf
-		echo "max_wal_senders = 10" >> postgresql.conf
-		echo "wal_keep_segments = 500" >> postgresql.conf
-		echo "archive_mode = on" >> postgresql.conf
-		echo "archive_command = 'cd .'" >> postgresql.conf
-		echo "hot_standby = on" >> postgresql.conf
-		echo "" >> postgresql.conf
-
-		logger "Updated postgresql.conf"
-		echo "Updated postgresql.conf"
-	fi
-
-	# Synchronize the slave
-	if [ "$NODETYPE" == "SLAVE" ];
-	then
-		# Remove all files from the slave data directory
-		logger "Remove all files from the slave data directory"
-		sudo -u postgres rm -rf /datadisks/disk1/main
-
-		# Make a binary copy of the database cluster files while making sure the system is put in and out of backup mode automatically
-		logger "Make binary copy of the data directory from master"
-		sudo PGPASSWORD=$PGPASSWORD -u postgres pg_basebackup -h $MASTERIP -D /datadisks/disk1/main -U replicator
-
-		# Create recovery file
-		logger "Create recovery.conf file"
-		cd /var/lib/postgresql/9.3/main/
-
-		sudo -u postgres echo "standby_mode = 'on'" > recovery.conf
-		sudo -u postgres echo "primary_conninfo = 'host=$MASTERIP port=5432 user=replicator password=$PGPASSWORD'" >> recovery.conf
-		sudo -u postgres echo "trigger_file = '/var/lib/postgresql/9.3/main/failover'" >> recovery.conf
-	fi
-
-	logger "Done configuring PostgreSQL streaming replication"
-}
-
-# MAIN ROUTINE
-install_iris_service
-
-#setup_datadisks
-
-#service postgresql start
-#iris start iris quietly
-
-#configure_streaming_replication
-
-#service postgresql start
-#iris start iris quietly
-

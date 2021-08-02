@@ -94,7 +94,7 @@ ClassMethod JoinAsFailover(PrimaryNodeIP As %String) As %Status
 
 ClassMethod CreateMirroredDB(dbName As %String, dir As %String = "") As %Status
 {
-  if (dir="") { set dir="/iris/db/" }
+  if (dir="") { set dir="/datadisks/disk1/iris/db/" }
   set mirrorName="MIRRORSET"
   
   write !, "Creating databases and NS ",dbName,"...",!
