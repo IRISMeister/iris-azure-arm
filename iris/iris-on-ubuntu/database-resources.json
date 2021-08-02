@@ -43,7 +43,8 @@
     "nicName": "[concat(variables('namespace'), 'nic')]",
     "adminUsername": "[parameters('commonSettings').adminUsername]",
     "vmCount": "[parameters('machineSettings').vmCount]",
-    "singleQuote": "'"
+    "singleQuote": "'",
+    "publicIpName": "[concat('iris', 'publicIp')]"
   },
   "resources": [
     {
@@ -73,6 +74,9 @@
             "name": "ipconfig1",
             "properties": {
               "privateIPAllocationMethod": "Dynamic",
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('publicIpName'))]"
+              },
               "subnet": {
                 "id": "[variables('subnetRef')]"
               }
