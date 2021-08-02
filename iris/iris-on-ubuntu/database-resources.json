@@ -23,6 +23,9 @@
     "dbType": {
       "type": "string"
     },
+    "dnsName": {
+      "type": "string"
+    },
     "location": {
       "type": "string"
     },
@@ -43,6 +46,18 @@
     "singleQuote": "'"
   },
   "resources": [
+    {
+      "apiVersion": "2019-11-01",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "name": "[variables('publicIpName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic",
+        "dnsSettings": {
+          "domainNameLabel": "[parameters('dnsName')]"
+        }
+      }
+    },
     {
       "apiVersion": "2019-11-01",
       "type": "Microsoft.Network/networkInterfaces",

@@ -98,7 +98,7 @@
     "deploymentSize": {
       "Small": {
         "vmSize": "Standard_A1_v2",
-        "diskSize": 128,
+        "diskSize": 1023,
         "diskCount": 2,
         "vmCount": 2,
         "slaveCount": 1,
@@ -250,6 +250,9 @@
           "subnet": {
             "value": "[variables('networkSettings').subnets.data]"
           },
+          "dnsName": {
+            "value": "[parameters('domainName')]"
+          },
           "commonSettings": {
             "value": {
               "adminUsername": "[parameters('adminUsername')]",
@@ -305,6 +308,9 @@
           },
           "subnet": {
             "value": "[variables('networkSettings').subnets.data]"
+          },
+          "dnsName": {
+            "value": "[parameters('domainName')]"
           },
           "commonSettings": {
             "value": {
