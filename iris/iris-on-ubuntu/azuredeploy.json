@@ -34,12 +34,6 @@
         "description": "T-shirt size of the PostgreSQL deployment"
       }
     },
-    "replicatorPassword": {
-      "type": "securestring",
-      "metadata": {
-        "description": "The replication password used for PostgreSQL streaming replication"
-      }
-    },
     "jumpbox": {
       "type": "string",
       "defaultValue": "Enabled",
@@ -262,9 +256,6 @@
           "adminPassword": {
             "value": "[parameters('adminPassword')]"
           },
-          "replicatorPassword": {
-            "value": "[parameters('replicatorPassword')]"
-          },
           "osSettings": {
             "value": "[variables('osSettings')]"
           },
@@ -326,9 +317,6 @@
           },
           "adminPassword": {
             "value": "[parameters('adminPassword')]"
-          },
-          "replicatorPassword": {
-            "value": "[parameters('replicatorPassword')]"
           },
           "osSettings": {
             "value": "[variables('osSettings')]"

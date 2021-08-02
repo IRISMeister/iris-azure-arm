@@ -55,10 +55,9 @@ now=$(date +"%Y%m%d")
 MASTERIP=""
 SUBNETADDRESS=""
 NODETYPE=""
-REPLICATORPASSWORD=""
 
 #Loop through options passed
-while getopts :m:s:t:p:U:P:L:T: optname; do
+while getopts :m:s:t:U:P:L:T: optname; do
     logger "Option $optname set with value ${OPTARG}"
   case $optname in
     m)
@@ -69,9 +68,6 @@ while getopts :m:s:t:p:U:P:L:T: optname; do
       ;;
     t) #Type of node (MASTER/SLAVE)
       NODETYPE=${OPTARG}
-      ;;
-    p) #Replication Password
-      REPLICATORPASSWORD=${OPTARG}
       ;;
     U) #WRC Username
       WRCUSERNAME=${OPTARG}
@@ -97,7 +93,6 @@ while getopts :m:s:t:p:U:P:L:T: optname; do
   esac
 done
 
-export PGPASSWORD=$REPLICATORPASSWORD
 export WRC_USERNAME=$WRCUSERNAME
 export WRC_PASSWORD=$WRCPASSWORD
 export SECRETURL=$SECRETURL
@@ -123,16 +118,16 @@ install_iris_server() {
 if [ "$NODETYPE" == "MASTER" ];
 then
   echo "Initializing as PRIMARY mirror member"
-  IRIS_COMMAND_INIT_MIRROR="##class(SE.ShardInstaller).CreateMirrorSet(\"${MirrorArbiterIP}\")"
-  IRIS_COMMAND_CREATE_DB="##class(SE.ShardInstaller).CreateMirroredDB(\"${MirrorDBName}\")"
+  IRIS_COMMAND_INIT_MIRROR="##class(Silent.Installer).CreateMirrorSet(\"${MirrorArbiterIP}\")"
+  IRIS_COMMAND_CREATE_DB="##class(Silent.Installer).CreateMirroredDB(\"${MirrorDBName}\")"
 
 fi
 
 if [ "$NODETYPE" == "SLAVE" ];
 then
   echo "Initializing as FAILOVER mirror member"
-  IRIS_COMMAND_INIT_MIRROR="##class(SE.ShardInstaller).JoinAsFailover(\"${MirrorPrimaryIP}\")"
-  IRIS_COMMAND_CREATE_DB="##class(SE.ShardInstaller).CreateMirroredDB(\"${MirrorDBName}\")"
+  IRIS_COMMAND_INIT_MIRROR="##class(Silent.Installer).JoinAsFailover(\"${MirrorPrimaryIP}\")"
+  IRIS_COMMAND_CREATE_DB="##class(Silent.Installer).CreateMirroredDB(\"${MirrorDBName}\")"
 fi
 
 # ++ edit here for optimal settings ++
@@ -157,7 +152,7 @@ ISC_PACKAGE_IRISUSER=irisusr
 #    wget --secure-protocol=TLSv1_2 -O $kit.tar.gz --load-cookies cookie "https://wrc.intersystems.com/wrc/WRC.StreamServer.cls?FILE=/wrc/Live/ServerKits/$kit.tar.gz"
 #    rm -f cookie
 #fi
-wget "$SECRETURLblob/$kit.tar.gz?$SECRETSASTOKEN" -O $kit.tar.gz
+wget "${SECRETURL}blob/$kit.tar.gz?$SECRETSASTOKEN" -O $kit.tar.gz
 
 # add a user and group for iris
 useradd -m $ISC_PACKAGE_MGRUSER --uid 51773 | true
@@ -347,7 +342,7 @@ rm -fR $kittemp
 iris stop $ISC_PACKAGE_INSTANCENAME quietly
 
 # copy iris.key from secure location...
-wget "$SECRETURLblob/iris.key?$SECRETSASTOKEN" -O iris.key
+wget "${SECRETURL}blob/iris.key?$SECRETSASTOKEN" -O iris.key
 if [ -e iris.key ]; then
   cp iris.key $ISC_PACKAGE_INSTALLDIR/mgr/
 fi
@@ -401,11 +396,11 @@ EOS3
 # Ocasionally license server fails to recognize it...
 # 2 [Utility.Event] LMF Error: License Server replied 'Invalid Key' to startup message. Server is incompatible with this product or key.
 # 0 [Generic.Event] LMFMON exited due to halt command executed
-ISC_CPF_MERGE_FILE=$USERHOME/merge.cpf iris start $ISC_PACKAGE_INSTANCENAME quietly &&
-iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "##class(SE.ShardInstaller).EnableMirroringService()" &&
+ISC_CPF_MERGE_FILE=$USERHOME/merge.cpf iris start $ISC_PACKAGE_INSTANCENAME quietly
+sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "##class(Silent.Installer).EnableMirroringService()" &&
 sleep 2 &&
 echo "\nexecuting $IRIS_COMMAND_INIT_MIRROR" && 
-iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "$IRIS_COMMAND_INIT_MIRROR" &&
+sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "$IRIS_COMMAND_INIT_MIRROR" &&
 # Without restart, FAILOVER member fails to retrieve (mirror) journal file...and retries forever...
 if [ "$INSTANCEROLE" == "FAILOVER" ]
 then
@@ -413,7 +408,7 @@ then
 fi
 sleep 2 &&
 echo "\nexecuting $IRIS_COMMAND_CREATE_DB" && 
-iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "$IRIS_COMMAND_CREATE_DB"
+sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "$IRIS_COMMAND_CREATE_DB"
 
 }
 
