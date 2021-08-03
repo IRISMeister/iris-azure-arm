@@ -423,7 +423,7 @@
             "value": "[parameters('adminPassword')]"
           },
           "subnet": {
-            "value": "[variables('networkSettings').subnets.dmz]"
+            "value": "[variables('networkSettings').subnets.data]"
           },
           "osSettings": {
             "value": "[variables('osSettings')]"
