@@ -169,6 +169,7 @@
     "osSettings": {
       "scripts": [
         "[uri(parameters('_artifactsLocation'), concat('install_iris.sh', parameters('_artifactsLocationSasToken')))]",
+        "[uri(parameters('_artifactsLocation'), concat('Installer.cls', parameters('_artifactsLocationSasToken')))]",
         "https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/shared_scripts/ubuntu/vm-disk-utils-0.1.sh"
       ],
       "imageReference": {
