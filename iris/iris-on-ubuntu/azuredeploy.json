@@ -52,6 +52,21 @@
         "description": "Size of the jumpbox VM, ignored if jumbox is disabled."
       }
     },
+    "arbiter": {
+      "type": "string",
+      "defaultValue": "Enabled",
+      "allowedValues": [
+        "Enabled",
+        "Disabled"
+      ]
+    },
+    "arbiterSize": {
+      "type": "string",
+      "defaultValue": "Standard_A1_V2",
+      "metadata": {
+        "description": "Size of the arbiter VM, ignored if arbiter is disabled."
+      }
+    },
     "virtualNetworkName": {
       "type": "string",
       "defaultValue": "vnet",
@@ -164,6 +179,7 @@
         }
       }
     },
+    "arbiterTemplateUrl": "[uri(parameters('_artifactsLocation'), concat('arbiter-resources.json', parameters('_artifactsLocationSasToken')))]",
     "jumpboxTemplateUrl": "[uri(parameters('_artifactsLocation'), concat('jumpbox-resources.json', parameters('_artifactsLocationSasToken')))]",
     "databaseTemplateUrl": "[uri(parameters('_artifactsLocation'), concat('database-resources.json', parameters('_artifactsLocationSasToken')))]",
     "osSettings": {
@@ -196,8 +212,8 @@
       }
     },
     "availabilitySetSettings": {
-      "name": "pgsqlAvailabilitySet",
-      "fdCount": 2,
+      "name": "irisAvailabilitySet",
+      "fdCount": 3,
       "udCount": 5
     }
   },
@@ -378,7 +394,65 @@
           }
         }
       }
+    },
+    {
+      "condition": "[equals('Enabled', parameters('arbiter'))]",
+      "name": "arbiter",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2019-10-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'shared')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('arbiterTemplateUrl')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "commonSettings": {
+            "value": {
+              "adminUsername": "[parameters('adminUsername')]",
+              "namespace": "arbiter"
+            }
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "subnet": {
+            "value": "[variables('networkSettings').subnets.dmz]"
+          },
+          "osSettings": {
+            "value": "[variables('osSettings')]"
+          },
+          "vmSize": {
+            "value": "[parameters('arbiterSize')]"
+          },
+          "machineSettings": {
+            "value": {
+              "availabilitySet": "[variables('availabilitySetSettings').name]"
+            }
+          },
+          "masterIpAddress": {
+            "value": "[reference('master-node').outputs.masterip.value]"
+          },
+          "dbType": {
+            "value": "ARBITER"
+          },
+          "_secretsLocation": {
+            "value": "[parameters('_secretsLocation')]"
+          },
+          "_secretsLocationSasToken": {
+            "value": "[parameters('_secretsLocationSasToken')]"
+          }
+        }
+      }
     }
+
+
   ],
   "outputs": {
   }
