@@ -28,7 +28,7 @@
 # You must be root to run this script
 if [ "${UID}" -ne 0 ];
 then
-    logger "Script executed without root permissions"
+    echo "Script executed without root permissions"
     echo "You must be root to run this program." >&2
     exit 3
 fi
@@ -42,19 +42,23 @@ now=$(date +"%Y%m%d")
 # Get passed in parameters $1, $2, $3, $4, and others...
 MASTERIP=""
 SUBNETADDRESS=""
+ARBITERIP=""
 NODETYPE=""
 SECRETURL=""
 SECRETSASTOKEN=""
 
 #Loop through options passed
-while getopts :m:s:t:L:T: optname; do
-    logger "Option $optname set with value ${OPTARG}"
+while getopts :m:s:a:t:L:T: optname; do
+    echo "Option $optname set with value ${OPTARG}"
   case $optname in
     m)
       MASTERIP=${OPTARG}
       ;;
   	s) #Data storage subnet space
       SUBNETADDRESS=${OPTARG}
+      ;;
+    a) #arbiter ip address
+      ARBITERIP=${OPTARG}
       ;;
     t) #Type of node (MASTER/SLAVE)
       NODETYPE=${OPTARG}
@@ -77,28 +81,24 @@ while getopts :m:s:t:L:T: optname; do
   esac
 done
 
-#export SECRETURL=$SECRETURL
-#export SECRETSASTOKEN=$SECRETSASTOKEN
-
-logger "NOW=$now MASTERIP=$MASTERIP SUBNETADDRESS=$SUBNETADDRESS NODETYPE=$NODETYPE"
-echo "NOW=$now MASTERIP=$MASTERIP SUBNETADDRESS=$SUBNETADDRESS NODETYPE=$NODETYPE" >> params.log
+echo "NOW=$now MASTERIP=$MASTERIP SUBNETADDRESS=$SUBNETADDRESS ARBITERIP=$ARBITERIP NODETYPE=$NODETYPE" >> params.log
 echo "SECRETURL=$SECRETURL SECRETSASTOKEN=$SECRETSASTOKEN" >> params.log
 
 install_iris_service() {
-	logger "Start installing IRIS..."
 	# Re-synchronize the package index files from their sources. An update should always be performed before an upgrade.
 	apt-get -y update
 
+	echo "Start installing IRIS..."
 	install_iris_server
 
-	logger "Start installing IRIS..."
 }
 
 install_iris_server() {
 #!/bin/bash -e
 
 export MirrorDBName='MYDB'
-export MirrorArbiterIP='none'
+#export MirrorArbiterIP='none'
+export MirrorArbiterIP=$ARBITERIP
 
 if [ "$NODETYPE" == "ARBITER" ];
 then
@@ -174,7 +174,8 @@ chmod og+rx $kittemp
 rm -fR $kittemp/$kit | true
 tar -xvf $kit.tar.gz -C $kittemp
 
-get_installer_cls
+cp Installer.cls $kittemp/$kit/Installer.cls
+chmod 777 $kittemp/$kit/Installer.cls
 pushd $kittemp/$kit
 sudo ISC_PACKAGE_INSTANCENAME=$ISC_PACKAGE_INSTANCENAME \
 ISC_PACKAGE_IRISGROUP=$ISC_PACKAGE_IRISUSER \
@@ -242,14 +243,12 @@ AlternateDirectory=/iris/journal2/
 CurrentDirectory=/iris/journal1/
 EOS3
 
-# Ocasionally license server fails to recognize it...
-# 2 [Utility.Event] LMF Error: License Server replied 'Invalid Key' to startup message. Server is incompatible with this product or key.
-# 0 [Generic.Event] LMFMON exited due to halt command executed
 ISC_CPF_MERGE_FILE=$USERHOME/merge.cpf iris start $ISC_PACKAGE_INSTANCENAME quietly
 sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "##class(Silent.Installer).EnableMirroringService()" &&
 sleep 2 &&
 echo "\nexecuting $IRIS_COMMAND_INIT_MIRROR" && 
 sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "$IRIS_COMMAND_INIT_MIRROR" &&
+
 # Without restart, FAILOVER member fails to retrieve (mirror) journal file...and retries forever...
 if [ "$NODETYPE" == "SLAVE" ]
 then
@@ -259,15 +258,10 @@ sleep 2 &&
 echo "\nexecuting $IRIS_COMMAND_CREATE_DB" && 
 sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "$IRIS_COMMAND_CREATE_DB"
 
-# ToDo: maybe should restart by using systemctl...
+# ToDo: should I restart by using systemctl?
 
-}
-
-get_installer_cls() {
-  cp Installer.cls $kittemp/$kit/Installer.cls
-  chmod 777 $kittemp/$kit/Installer.cls
 }
 
 # MAIN ROUTINE
-logger "calling install_iris_service"
+echo "calling install_iris_service"
 install_iris_service

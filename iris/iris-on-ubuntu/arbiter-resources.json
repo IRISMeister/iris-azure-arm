@@ -121,5 +121,10 @@
       }
     }
   ],
-  "outputs": {}
+  "outputs": {
+    "arbiterip": {
+      "value": "[reference(resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))).ipConfigurations[0].properties.privateIPAddress]",
+      "type": "string"
+    }
+  }
 }

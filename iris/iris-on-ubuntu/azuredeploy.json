@@ -247,7 +247,8 @@
       "type": "Microsoft.Resources/deployments",
       "apiVersion": "2019-10-01",
       "dependsOn": [
-        "[resourceId('Microsoft.Resources/deployments', 'shared')]"
+        "[resourceId('Microsoft.Resources/deployments', 'shared')]",
+        "[resourceId('Microsoft.Resources/deployments', 'arbiter')]"
       ],
       "properties": {
         "mode": "Incremental",
@@ -285,6 +286,9 @@
           },
           "masterIpAddress": {
             "value": "0"
+          },
+          "arbiterIpAddress": {
+            "value": "[reference('arbiter').outputs.arbiterip.value]"
           },
           "dbType": {
             "value": "MASTER"
@@ -342,6 +346,9 @@
           "masterIpAddress": {
             "value": "[reference('master-node').outputs.masterip.value]"
           },
+          "arbiterIpAddress": {
+            "value": "none"
+          },
           "dbType": {
             "value": "SLAVE"
           },
@@ -354,48 +361,7 @@
         }
       }
     },
-    {
-      "condition": "[equals('Enabled', parameters('jumpbox'))]",
-      "name": "jumpbox",
-      "type": "Microsoft.Resources/deployments",
-      "apiVersion": "2019-10-01",
-      "dependsOn": [
-        "[resourceId('Microsoft.Resources/deployments', 'shared')]"
-      ],
-      "properties": {
-        "mode": "Incremental",
-        "templateLink": {
-          "uri": "[variables('jumpboxTemplateUrl')]",
-          "contentVersion": "1.0.0.0"
-        },
-        "parameters": {
-          "location": {
-            "value": "[parameters('location')]"
-          },
-          "dnsName": {
-            "value": "[parameters('domainName')]"
-          },
-          "commonSettings": {
-            "value": {
-              "adminUsername": "[parameters('adminUsername')]",
-              "namespace": "jumpbox"
-            }
-          },
-          "adminPassword": {
-            "value": "[parameters('adminPassword')]"
-          },
-          "subnet": {
-            "value": "[variables('networkSettings').subnets.dmz]"
-          },
-          "osSettings": {
-            "value": "[variables('osSettings')]"
-          },
-          "vmSize": {
-            "value": "[parameters('jumpBoxSize')]"
-          }
-        }
-      }
-    },
+
     {
       "condition": "[equals('Enabled', parameters('arbiter'))]",
       "name": "arbiter",
@@ -451,9 +417,49 @@
           }
         }
       }
+    },
+    {
+      "condition": "[equals('Enabled', parameters('jumpbox'))]",
+      "name": "jumpbox",
+      "type": "Microsoft.Resources/deployments",
+      "apiVersion": "2019-10-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Resources/deployments', 'shared')]"
+      ],
+      "properties": {
+        "mode": "Incremental",
+        "templateLink": {
+          "uri": "[variables('jumpboxTemplateUrl')]",
+          "contentVersion": "1.0.0.0"
+        },
+        "parameters": {
+          "location": {
+            "value": "[parameters('location')]"
+          },
+          "dnsName": {
+            "value": "[parameters('domainName')]"
+          },
+          "commonSettings": {
+            "value": {
+              "adminUsername": "[parameters('adminUsername')]",
+              "namespace": "jumpbox"
+            }
+          },
+          "adminPassword": {
+            "value": "[parameters('adminPassword')]"
+          },
+          "subnet": {
+            "value": "[variables('networkSettings').subnets.dmz]"
+          },
+          "osSettings": {
+            "value": "[variables('osSettings')]"
+          },
+          "vmSize": {
+            "value": "[parameters('jumpBoxSize')]"
+          }
+        }
+      }
     }
-
-
   ],
   "outputs": {
   }

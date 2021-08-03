@@ -20,6 +20,9 @@
     "masterIpAddress": {
       "type": "string"
     },
+    "arbiterIpAddress": {
+      "type": "string"
+    },
     "dbType": {
       "type": "string"
     },
@@ -140,7 +143,7 @@
           "fileUris": "[parameters('osSettings').scripts]"
         },
         "protectedSettings": {
-          "commandToExecute": "[concat('bash install_iris.sh -m ', parameters('masterIpAddress'), ' -s ', parameters('subnet').prefix, ' -t ', parameters('dbType'),' -L ',variables('singleQuote'),parameters('_secretsLocation'),variables('singleQuote'),' -T ',variables('singleQuote'),parameters('_secretsLocationSasToken'),variables('singleQuote') )]"
+          "commandToExecute": "[concat('bash install_iris.sh -m ', parameters('masterIpAddress'), ' -s ', parameters('subnet').prefix, ' -a ', parameters('arbiterIpAddress'), ' -t ', parameters('dbType'),' -L ',variables('singleQuote'),parameters('_secretsLocation'),variables('singleQuote'),' -T ',variables('singleQuote'),parameters('_secretsLocationSasToken'),variables('singleQuote') )]"
         }
       }
     }

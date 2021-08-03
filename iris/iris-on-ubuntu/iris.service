@@ -3,10 +3,10 @@ Description=Intersystem IRIS Service
 After=network.target
 [Service]
 Type=forking
-WorkingDirectory=/iris/sys
+WorkingDirectory=/usr/irissys
 User=root
-ExecStart=/iris/sys/bin/iris start IRIS
-ExecStop=/iris/sys/bin/iris stop IRIS quietly
+ExecStart=/usr/irissys/bin/iris start IRIS
+ExecStop=/usr/irissys/bin/iris stop IRIS quietly
 Restart=on-abort
 [Install]
 WantedBy=default.target
