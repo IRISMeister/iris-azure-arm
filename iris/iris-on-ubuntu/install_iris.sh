@@ -43,6 +43,8 @@ now=$(date +"%Y%m%d")
 MASTERIP=""
 SUBNETADDRESS=""
 NODETYPE=""
+SECRETURL=""
+SECRETSASTOKEN=""
 
 #Loop through options passed
 while getopts :m:s:t:L:T: optname; do
@@ -140,10 +142,6 @@ fi
 # ++ edit here for optimal settings ++
 kit=IRIS-2021.1.0.215.0-lnxubuntux64
 password=sys
-globals8k=64
-routines=64
-locksiz=16777216
-gmheap=37568
 ssport=51773
 webport=52773
 kittemp=/tmp/iriskit
@@ -159,7 +157,7 @@ ISC_PACKAGE_IRISUSER=irisusr
 #    wget --secure-protocol=TLSv1_2 -O $kit.tar.gz --load-cookies cookie "https://wrc.intersystems.com/wrc/WRC.StreamServer.cls?FILE=/wrc/Live/ServerKits/$kit.tar.gz"
 #    rm -f cookie
 #fi
-wget "${SECRETURL}blob/$kit.tar.gz?$SECRETSASTOKEN" -O $kit.tar.gz
+wget "${SECRETURL}blob/${kit}.tar.gz?${SECRETSASTOKEN}" -O $kit.tar.gz
 
 # add a user and group for iris
 useradd -m $ISC_PACKAGE_MGRUSER --uid 51773 | true
@@ -202,7 +200,7 @@ rm -fR $kittemp
 iris stop $ISC_PACKAGE_INSTANCENAME quietly
 
 # copy iris.key from secure location...
-wget "${SECRETURL}blob/iris.key?$SECRETSASTOKEN" -O iris.key
+wget "${SECRETURL}blob/iris.key?${SECRETSASTOKEN}" -O iris.key
 if [ -e iris.key ]; then
   cp iris.key $ISC_PACKAGE_INSTALLDIR/mgr/
 fi
@@ -222,21 +220,7 @@ chown $ISC_PACKAGE_MGRUSER:$ISC_PACKAGE_IRISUSER /iris/journal2
 chmod 777 /iris/journal1
 chmod 777 /iris/journal1
 
-cat << 'EOS2' > /etc/systemd/system/iris.service
-[Unit]
-Description=Intersystem IRIS Service
-After=network.target
-[Service]
-Type=forking
-WorkingDirectory=/iris/sys
-User=root
-ExecStart=/iris/sys/bin/iris start IRIS
-ExecStop=/iris/sys/bin/iris stop IRIS quietly
-Restart=on-abort
-[Install]
-WantedBy=default.target
-EOS2
-
+cp iris.service /etc/systemd/system/iris.service
 chmod 644 /etc/systemd/system/iris.service
 sudo systemctl daemon-reload &&
 sudo systemctl enable ISCAgent.service &&
@@ -281,9 +265,6 @@ sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "$IRIS_COMMA
 
 get_installer_cls() {
   cp Installer.cls $kittemp/$kit/Installer.cls
-# this is a here document of Installer.cls
-#cat << 'EOS' > $kittemp/$kit/Installer.cls
-#EOS
   chmod 777 $kittemp/$kit/Installer.cls
 }
 
