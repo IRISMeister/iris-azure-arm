@@ -403,7 +403,10 @@
             }
           },
           "masterIpAddress": {
-            "value": "[reference('master-node').outputs.masterip.value]"
+            "value": "0"
+          },
+          "arbiterIpAddress": {
+            "value": "none"
           },
           "dbType": {
             "value": "ARBITER"
