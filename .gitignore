@@ -1,2 +1,4 @@
 *.tar.gz
 memo.txt
+iris/iris-on-ubuntu/azuredeploy.parameters.json
+iris/iris-standalone-server-ubuntu/azuredeploy.parameters.json

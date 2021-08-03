@@ -230,7 +230,7 @@ sudo systemctl enable iris &&
 
 USERHOME=/home/$ISC_PACKAGE_MGRUSER
 # additional config if any
-cat << 'EOS3' > $USERHOME/merge.cpf
+cat << 'EOS' > $USERHOME/merge.cpf
 [config]
 globals=0,0,128,0,0,0
 gmheap=75136
@@ -241,7 +241,7 @@ wduseasyncio=1
 [Journal]
 AlternateDirectory=/iris/journal2/
 CurrentDirectory=/iris/journal1/
-EOS3
+EOS
 
 ISC_CPF_MERGE_FILE=$USERHOME/merge.cpf iris start $ISC_PACKAGE_INSTANCENAME quietly
 sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "##class(Silent.Installer).EnableMirroringService()" &&

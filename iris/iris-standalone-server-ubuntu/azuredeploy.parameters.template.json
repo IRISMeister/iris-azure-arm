@@ -11,12 +11,6 @@
     "adminPasswordOrKey": {
       "value": "GEN-SSH-PUB-KEY"
     },
-    "WRCUsername": {
-        "value": "" // TODO: Fill in parameter value
-    },
-    "WRCPassword": {
-        "value": "" // TODO: Fill in parameter value
-    },
     "_secretsLocation": {
         "value": "" // TODO: Fill in parameter value
     },
