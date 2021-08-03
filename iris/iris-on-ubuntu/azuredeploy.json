@@ -213,7 +213,7 @@
     },
     "availabilitySetSettings": {
       "name": "irisAvailabilitySet",
-      "fdCount": 3,
+      "fdCount": 2,
       "udCount": 5
     }
   },
