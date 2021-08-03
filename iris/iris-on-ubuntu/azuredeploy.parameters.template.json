@@ -8,8 +8,11 @@
     "adminPassword": {
       "value": "GEN-PASSWORD"
     },
-    "replicatorPassword": {
-      "value": "GEN-PASSWORD"
+    "_secretsLocation": {
+      "value": "" // TODO: Fill in parameter value
+    },
+    "_secretsLocationSasToken": {
+        "value": "" // TODO: Fill in parameter value
     }
   }
 }

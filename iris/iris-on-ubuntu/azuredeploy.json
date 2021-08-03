@@ -31,7 +31,7 @@
         "XLarge"
       ],
       "metadata": {
-        "description": "T-shirt size of the PostgreSQL deployment"
+        "description": "T-shirt size of the IRIS deployment"
       }
     },
     "jumpbox": {
@@ -42,7 +42,7 @@
         "Disabled"
       ],
       "metadata": {
-        "description": "The flag allowing to enable or disable provisioning of the jumpbox VM that can be used to access the PostgreSQL environment"
+        "description": "The flag allowing to enable or disable provisioning of the jumpbox VM that can be used to access the IRIS environment"
       }
     },
     "jumpBoxSize": {

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "adminUsername": {
+      "value": "GEN-UNIQUE"
+    },
+    "dnsNamePrefix": {
+      "value": "GEN-UNIQUE"
+    },
+    "adminPasswordOrKey": {
+      "value": "GEN-SSH-PUB-KEY"
+    },
+    "WRCUsername": {
+        "value": "" // TODO: Fill in parameter value
+    },
+    "WRCPassword": {
+        "value": "" // TODO: Fill in parameter value
+    },
+    "_secretsLocation": {
+        "value": "" // TODO: Fill in parameter value
+    },
+    "_secretsLocationSasToken": {
+        "value": "" // TODO: Fill in parameter value
+    }
+  }
+}
