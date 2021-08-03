@@ -79,7 +79,8 @@ done
 #export SECRETSASTOKEN=$SECRETSASTOKEN
 
 logger "NOW=$now MASTERIP=$MASTERIP SUBNETADDRESS=$SUBNETADDRESS NODETYPE=$NODETYPE"
-
+echo "NOW=$now MASTERIP=$MASTERIP SUBNETADDRESS=$SUBNETADDRESS NODETYPE=$NODETYPE" >> params.log
+echo "SECRETURL=$SECRETURL SECRETSASTOKEN=$SECRETSASTOKEN" >> params.log
 
 install_iris_service() {
 	logger "Start installing IRIS..."
@@ -102,6 +103,9 @@ then
   echo "Initializing as Arbiter"
   #!/usr/bin/env bash
   kit=ISCAgent-2021.1.0.215.0-lnxrhx64
+  mkdir /tmp/irisdistr
+  exit
+
   pushd /tmp/irisdistr
   wget "${SECRETURL}blob/$kit.tar.gz?$SECRETSASTOKEN" -O $kit.tar.gz
 
