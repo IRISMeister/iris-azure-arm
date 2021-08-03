@@ -21,7 +21,8 @@
       "type": "string"
     },
     "dbType": {
-      "type": "string"
+      "type": "string",
+      "value": "ARBITER"
     },
     "location": {
       "type": "string"
