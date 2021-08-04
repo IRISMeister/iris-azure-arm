@@ -5,11 +5,11 @@
     "adminUsername": {
       "value": "GEN-UNIQUE"
     },
-    "dnsNamePrefix": {
-      "value": "GEN-UNIQUE"
-    },
     "adminPasswordOrKey": {
       "value": "GEN-SSH-PUB-KEY"
+    },
+    "domainName": {
+      "value": "GEN-UNIQUE"
     },
     "_secretsLocation": {
         "value": "" // TODO: Fill in parameter value
