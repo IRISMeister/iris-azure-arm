@@ -10,11 +10,10 @@
 
 | パラメータ名 | 用途 | 備考 |設定例|
 | ------------ | ------ | ---- | --- |
-|adminUsername|sudo可能なO/Sユーザ名||irismeister|
+|adminUsername|sudo可能なO/Sユーザ名,全VM共通||irismeister|
 |adminPasswordOrKey|SSH public key|ssh接続時に使用。StandAloneのみ|ssh-rsa AAA... generated-by-azure|
-|adminPassword|パスワード|Mirrorの場合|Passw0rd|
-|domainName|Public DNS名|StandAloneのIRIS用|my-iris-123|
-|domainName|Public DNS名|MirrorのJumpBox用|my-iris-123|
+|adminPassword|パスワード|Mirrorの場合,全VM共通|Passw0rd|
+|domainName|Public DNS名|StandAloneのIRIS,MirrorのJumpBox用DNSホスト名|my-iris-123|
 |_artifactsLocation|ARMテンプレートのURL|自動設定||
 |_artifactsLocationSasToken|同Sas Token|未使用||
 |_secretsLocation|プライべートファイルのURL|Azure Blobを想定。Kit,ライセンスキーなど|https://irismeister.blob.core.windows.net/|
@@ -128,7 +127,7 @@ ssh -L 8889:slvm0:52773 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/n
 [adminUsername]@[domainName].japaneast.cloudapp.azure.com
 ```
 
-例) ただし、リソースグループ名はIRIS-Group  
+例) 
 ```bash
 ssh -L 8888:msvm0:52773 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
 irismeister@my-iris-123.japaneast.cloudapp.azure.com
@@ -146,9 +145,11 @@ http://localhost:8888/csp/sys/UtilHome.csp
 http://localhost:8889/csp/sys/UtilHome.csp
 
 - SSH
-    パスワードはadminPasswordで指定したもの。  
-    プライマリサーバへは端末1から
+    プライマリサーバへは端末1から。パスワードは[adminPassword]で指定したもの。
     ```bash
+    [adminUsername]@jumpboxvm:~$ ssh [adminUsername]@msvm0
+
+    例)
     irismeister@jumpboxvm:~$ ssh irismeister@msvm0
     irismeister@msvm0:~$
     irismeister@msvm0:~$ iris list
@@ -165,8 +166,11 @@ http://localhost:8889/csp/sys/UtilHome.csp
     irismeister@msvm0:~$
     ```
 
-    バックアップサーバへは端末2から
+    バックアップサーバへは端末2から。パスワードは[adminPassword]で指定したもの。
     ```bash
+    [adminUsername]@jumpboxvm:~$ ssh [adminUsername]@slvm0
+
+    例)
     irismeister@jumpboxvm:~$ ssh irismeister@slvm0
     irismeister@slvm0:~$
     irismeister@slvm0:~$ iris list
