@@ -14,7 +14,7 @@
   },
   "variables": {
     "loadBalancerName": "irismeister-ilb",
-    "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('networkSettings').subnets.data)]"
+    "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('networkSettings').vnetName, parameters('networkSettings').subnets.data.name)]"
   },
   "resources": [
     {
