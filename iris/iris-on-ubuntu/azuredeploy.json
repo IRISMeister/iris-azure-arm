@@ -267,7 +267,7 @@
               "subnet": {
                 "id": "[variables('subnetRef')]"
               },
-              "privateIPAddress": null,
+              "privateIPAddress": "",
               "privateIPAllocationMethod": "Dynamic"
             },
             "name": "LoadBalancerFrontend"
