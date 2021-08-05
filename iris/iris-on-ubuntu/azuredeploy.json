@@ -180,6 +180,7 @@
       }
     },
 
+    "virtualNetworkName": "[parameters('virtualNetworkName')]",
     "loadBalancerName": "irismeister-ilb",
     "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), 'data')]",
 
@@ -257,7 +258,7 @@
         "name": "Standard"
       },
       "dependsOn": [
-        "[parameters('virtualNetworkName')]",
+        "[variables('virtualNetworkName')]",
         "[variables('loadBalancerName')]"
       ],
       "properties": {
