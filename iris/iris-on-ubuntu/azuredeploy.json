@@ -257,9 +257,6 @@
       "sku": {
         "name": "Standard"
       },
-      "dependsOn": [
-        "[variables('loadBalancerName')]"
-      ],
       "properties": {
         "frontendIPConfigurations": [
           {
