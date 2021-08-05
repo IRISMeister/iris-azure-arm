@@ -10,3 +10,5 @@ az deployment group create \
   --resource-group $rg \
   --template-uri "https://raw.githubusercontent.com/IRISMeister/iris-azure-arm/main/iris/iris-on-ubuntu/azuredeploy.json" \
   --parameters @azuredeploy.parameters.json
+
+az vm list-ip-addresses --resource-group $rg --output table

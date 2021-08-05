@@ -102,8 +102,13 @@ export MirrorArbiterIP=$ARBITERIP
 
 if [ "$NODETYPE" == "ARBITER" ];
 then
+  # get a jdbc driver for loadbalancer testing purpose
+  echo "compiling an ivp java program on Arbiter"
+  sudo apt install -y openjdk-8-jdk-headless
+  wget https://github.com/intersystems-community/iris-driver-distribution/raw/main/JDK18/intersystems-jdbc-3.2.0.jar
+　javac JDBCSample.java
+
   echo "Initializing as Arbiter"
-  #!/usr/bin/env bash
   kit=ISCAgent-2021.1.0.215.0-lnxrhx64
   mkdir /tmp/irisdistr
   exit

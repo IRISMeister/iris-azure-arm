@@ -190,7 +190,8 @@ wget "${SECRETURL}blob/iris.key?${SECRETSASTOKEN}" -O iris.key
 https://github.com/MicrosoftDocs/azure-docs/blob/master/includes/managed-disks-common-fault-domain-region-list.md
 
 
-### デバッグ
+## デバッグ
+### ファイルのデプロイ先
 デプロイに使用されるファイル群は下記に存在する。stderr,stdout,params.logに実行ログなどが記録されている。  
 ```bash
 irismeister@MyubuntuVM:~$ sudo su -
@@ -200,3 +201,20 @@ IRIS-2021.1.0.215.0-lnxubuntux64.tar.gz  install_iris.sh  iris.service  stderr
 Installer.cls                            iris.key         params.log    stdout
 root@MyubuntuVM:/var/lib/waagent/custom-script/download/0#
 ```
+
+### HealthProbe用のエンドポイント
+$ az vm list-ip-addresses --resource-group $rg --output table
+VirtualMachine    PrivateIPAddresses    PublicIPAddresses
+----------------  --------------------  -------------------
+arbitervm         10.0.1.4
+jumpboxvm         10.0.0.4              52.185.171.9
+msvm0             10.0.1.5
+slvm0             10.0.1.6
+
+プライマリメンバからの応答
+irismeister@arbitervm:~$  echo `curl http://msvm0:52773/csp/bin/mirror_status.cxw -s`
+SUCCESS
+バックアップメンバからの応答
+irismeister@arbitervm:~$  echo `curl http://slvm0:52773/csp/bin/mirror_status.cxw -s`
+FAILED
+
