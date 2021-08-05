@@ -179,11 +179,6 @@
         }
       }
     },
-
-    "virtualNetworkName": "[parameters('virtualNetworkName')]",
-    "loadBalancerName": "irismeister-ilb",
-    "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), 'data')]",
-
     "arbiterTemplateUrl": "[uri(parameters('_artifactsLocation'), concat('arbiter-resources.json', parameters('_artifactsLocationSasToken')))]",
     "jumpboxTemplateUrl": "[uri(parameters('_artifactsLocation'), concat('jumpbox-resources.json', parameters('_artifactsLocationSasToken')))]",
     "databaseTemplateUrl": "[uri(parameters('_artifactsLocation'), concat('database-resources.json', parameters('_artifactsLocationSasToken')))]",
@@ -247,72 +242,6 @@
         }
       }
     },
-
-
-    {
-      "type": "Microsoft.Network/loadBalancers",
-      "apiVersion": "2020-06-01",
-      "name": "[variables('loadBalancerName')]",
-      "location": "[parameters('location')]",
-      "sku": {
-        "name": "Standard"
-      },
-      "properties": {
-        "frontendIPConfigurations": [
-          {
-            "properties": {
-              "subnet": {
-                "id": "[variables('subnetRef')]"
-              },
-              "privateIPAddress": "",
-              "privateIPAllocationMethod": "Dynamic"
-            },
-            "name": "LoadBalancerFrontend"
-          }
-        ],
-        "backendAddressPools": [
-          {
-            "name": "BackendPool1"
-          }
-        ],
-        "loadBalancingRules": [
-          {
-            "properties": {
-              "frontendIPConfiguration": {
-                "id": "[resourceId('Microsoft.Network/loadBalancers/frontendIpConfigurations', variables('loadBalancerName'), 'LoadBalancerFrontend')]"
-              },
-              "backendAddressPool": {
-                "id": "[resourceId('Microsoft.Network/loadBalancers/backendAddressPools', variables('loadBalancerName'), 'BackendPool1')]"
-              },
-              "probe": {
-                "id": "[resourceId('Microsoft.Network/loadBalancers/probes', variables('loadBalancerName'), 'lbprobe')]"
-              },
-              "protocol": "Tcp",
-              "frontendPort": 51773,
-              "backendPort": 51773,
-              "idleTimeoutInMinutes": 15
-            },
-            "Name": "lbrule"
-          }
-        ],
-        "probes": [
-          {
-            "properties": {
-              "protocol": "Http",
-              "port": 52773,
-              "requestPath": "/csp/bin/mirror_status.cxw",
-              "intervalInSeconds": 15,
-              "numberOfProbes": 2
-            },
-            "name": "lbprobe"
-          }
-        ]
-      }
-    },
-
-
-
-
     {
       "name": "master-node",
       "type": "Microsoft.Resources/deployments",
@@ -370,7 +299,7 @@
             "value": "[parameters('_secretsLocationSasToken')]"
           },
           "loadBalancerName": {
-            "value": "[variables('loadBalancerName')]"
+            "value": "irismeister-ilb"
           }
         }
       }
