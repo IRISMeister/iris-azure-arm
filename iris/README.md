@@ -5,6 +5,8 @@
 ミラー構成のデプロイ  
 [![Deploy To Azure Mirror](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FIRISMeister%2Firis-azure-arm%2Fmain%2Firis%2Firis-on-ubuntu%2Fazuredeploy.json)  
 
+[![Visualize](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/visualizebutton.svg?sanitize=true)](http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2FIRISMeister%2Firis-azure-arm%2Fmain%2Firis%2Firis-on-ubuntu%2Fazuredeploy.json)
+
 
 ## パラメータ一覧
 
@@ -218,3 +220,33 @@ SUCCESS
 irismeister@arbitervm:~$  echo `curl http://slvm0:52773/csp/bin/mirror_status.cxw -s`
 FAILED
 
+### LB動作確認
+
+templateでInternal LBを構成するとvmから外部接続できなくなる。(aptもwgetもできないため、vmの作成が失敗する)  
+https://jpaztech.github.io/blog/network/snat-options-for-azure-vm/
+https://docs.microsoft.com/ja-jp/azure/load-balancer/load-balancer-outbound-connections#how-does-default-snat-work
+
+Standard 内部 Load Balancer を使用する場合、SNAT のために一時 IP アドレスは使用されません。 この機能は、既定でセキュリティをサポートします。 この機能により、リソースによって使用されるすべての IP アドレスが構成可能になり、予約できるようになります。 Standard 内部 Load Balancer を使用するときに、インターネットへのアウトバウンド接続を実現するには、次を構成します。
+- インスタンス レベルのパブリック IP アドレス
+- VNet NAT
+- アウトバウンド規則が構成された Standard パブリック ロード バランサーへのバックエンド インスタンス。
+
+> vmデプロイ後に、手動で、msvm0,slvm0をLBのBackend poolsに追加した場合は、なぜかNAT-GW無しでも外部接続できる模様。  
+以下のJDBC接続テストは、手動で追加した後に実行。  
+
+JDBCをLBに対して接続する。ミラーのアクティブノードに接続が行われる事の確認に使用する。
+```bash
+irismeister@jumpboxvm:~$ ssh irismeister@arbitervm
+irismeister@arbitervm:~$ sudo su -
+root@arbitervm:~# cd /var/lib/waagent/custom-script/download/0
+root@arbitervm:/var/lib/waagent/custom-script/download/0# ls
+Installer.cls    install_iris.sh              iris.service  stderr  vm-disk-utils-0.1.sh
+JDBCSample.java  intersystems-jdbc-3.2.0.jar  params.log    stdout
+root@arbitervm:/var/lib/waagent/custom-script/download/0# javac JDBCSample.java
+root@arbitervm:/var/lib/waagent/custom-script/download/0# java -cp .:intersystems-jdbc-3.2.0.jar JDBCSample
+```
+
+恐らくNAT-GWが要る(AWSと同じ)。  
+NAT-GW構成後のpublic ipは、NAT-GWのOutbound IPに一致する。
+irismeister@slvm0:~$ curl https://ipinfo.io/ip
+23.102.69.138
