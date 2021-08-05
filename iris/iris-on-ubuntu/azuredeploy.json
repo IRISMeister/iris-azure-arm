@@ -177,12 +177,12 @@
           ],
           "jumpbox": 0
         }
-      },
-
-      "loadBalancerName": "irismeister-ilb",
-      "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), 'data')]"
-
+      }
     },
+
+    "loadBalancerName": "irismeister-ilb",
+    "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('virtualNetworkName'), 'data')]",
+
     "arbiterTemplateUrl": "[uri(parameters('_artifactsLocation'), concat('arbiter-resources.json', parameters('_artifactsLocationSasToken')))]",
     "jumpboxTemplateUrl": "[uri(parameters('_artifactsLocation'), concat('jumpbox-resources.json', parameters('_artifactsLocationSasToken')))]",
     "databaseTemplateUrl": "[uri(parameters('_artifactsLocation'), concat('database-resources.json', parameters('_artifactsLocationSasToken')))]",
