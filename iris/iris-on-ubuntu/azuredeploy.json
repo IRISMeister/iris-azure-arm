@@ -257,7 +257,8 @@
         "name": "Standard"
       },
       "dependsOn": [
-        "[parameters('virtualNetworkName')]"
+        "[parameters('virtualNetworkName')]",
+        "[variables('loadBalancerName')]"
       ],
       "properties": {
         "frontendIPConfigurations": [
