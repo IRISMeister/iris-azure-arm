@@ -258,7 +258,6 @@
         "name": "Standard"
       },
       "dependsOn": [
-        "[variables('virtualNetworkName')]",
         "[variables('loadBalancerName')]"
       ],
       "properties": {
