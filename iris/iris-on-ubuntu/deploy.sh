@@ -3,6 +3,7 @@
 rg=IRIS-Group
 
 az group delete --name $rg --yes
+echo "creating a resource group"
 az group create --name $rg --location "Japan East"
 
 az deployment group create \
