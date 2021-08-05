@@ -66,6 +66,9 @@
       "sku": {
         "name": "Standard"
       },
+      "dependsOn": [
+        "[parameters('networkSettings').vnetName]"
+      ],
       "properties": {
         "frontendIPConfigurations": [
           {
