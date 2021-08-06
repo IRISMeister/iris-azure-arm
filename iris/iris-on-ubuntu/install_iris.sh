@@ -125,7 +125,7 @@ END
   systemctl daemon-reload
   systemctl enable ISCAgent.service
   systemctl start ISCAgent.service
-  exit
+  exit 0
 fi
 
 if [ "$NODETYPE" == "MASTER" ];
@@ -227,10 +227,10 @@ chmod 777 /iris/journal1
 
 cp iris.service /etc/systemd/system/iris.service
 chmod 644 /etc/systemd/system/iris.service
-sudo systemctl daemon-reload &&
-sudo systemctl enable ISCAgent.service &&
-sudo systemctl start ISCAgent.service &&
-sudo systemctl enable iris &&
+sudo systemctl daemon-reload
+sudo systemctl enable ISCAgent.service
+sudo systemctl start ISCAgent.service
+sudo systemctl enable iris
 
 USERHOME=/home/$ISC_PACKAGE_MGRUSER
 # additional config if any
@@ -248,18 +248,19 @@ CurrentDirectory=/iris/journal1/
 EOS
 
 ISC_CPF_MERGE_FILE=$USERHOME/merge.cpf iris start $ISC_PACKAGE_INSTANCENAME quietly
-sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "##class(Silent.Installer).EnableMirroringService()" &&
-sleep 2 &&
-echo "\nexecuting $IRIS_COMMAND_INIT_MIRROR" && 
-sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "$IRIS_COMMAND_INIT_MIRROR" &&
+sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "##class(Silent.Installer).EnableMirroringService()"
+sleep 2
+echo "executing $IRIS_COMMAND_INIT_MIRROR" 
+sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "$IRIS_COMMAND_INIT_MIRROR" 
 
 # Without restart, FAILOVER member fails to retrieve (mirror) journal file...and retries forever...
 if [ "$NODETYPE" == "SLAVE" ]
 then
   sudo iris restart $ISC_PACKAGE_INSTANCENAME quietly
 fi
-sleep 2 &&
-echo "\nexecuting $IRIS_COMMAND_CREATE_DB" && 
+
+sleep 5
+echo "executing $IRIS_COMMAND_CREATE_DB"
 sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "$IRIS_COMMAND_CREATE_DB"
 
 # ToDo: should I restart by using systemctl?
@@ -269,3 +270,6 @@ sudo -u irisowner -i iris session $ISC_PACKAGE_INSTANCENAME -U\%SYS "$IRIS_COMMA
 # MAIN ROUTINE
 echo "calling install_iris_service"
 install_iris_service
+echo "ending install_iris_service"
+
+exit 0
