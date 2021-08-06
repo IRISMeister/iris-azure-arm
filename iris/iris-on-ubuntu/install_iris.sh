@@ -86,7 +86,7 @@ echo "SECRETURL=$SECRETURL SECRETSASTOKEN=$SECRETSASTOKEN" >> params.log
 
 install_iris_service() {
 	# Re-synchronize the package index files from their sources. An update should always be performed before an upgrade.
-	apt-get -y update
+	apt update -y
 
 	echo "Start installing IRIS..."
 	install_iris_server
