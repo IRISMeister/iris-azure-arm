@@ -7,6 +7,8 @@
 
 [![Visualize](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/visualizebutton.svg?sanitize=true)](http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2FIRISMeister%2Firis-azure-arm%2Fmain%2Firis%2Firis-on-ubuntu%2Fazuredeploy.json)
 
+下記サイト(特に、[postgre](https://github.com/Azure/azure-quickstart-templates/tree/master/application-workloads/postgre))を参考にさせていただきました。  
+https://github.com/Azure/azure-quickstart-templates
 
 ## パラメータ一覧
 
@@ -23,6 +25,16 @@
 ||||
 
 > Public DNS名はユニークである必要がある
+
+## 事前準備
+事前にIRISライセンスキー及びキットを用意し、**非公開設定**のAzure Blobにアップロードする(このURLをパラメータの_secretsLocationで指定する)。  
+Generate SASでキー(Signing method:Account key)を作成(パラメータの_secretsLocationSasTokenで指定する)。  
+インストーラshell内からは、下記のようにwgetで取得している。ただし  
+_secretsLocation => SECRETURL  
+_secretsLocationSasToken => SECRETSASTOKEN  
+```
+wget "${SECRETURL}blob/iris.key?${SECRETSASTOKEN}" -O iris.key
+```
 
 ## デプロイ方法
 - Azureポータルを使用する場合は、上部のDeploy to Azureリンクを使用してDeploymentを作成。パラメータに値を環境に応じた設定する。
@@ -43,6 +55,32 @@
     vi azuredeploy.parameters.json
     ./deploy.sh
     ```
+
+以後、adminUsernameには"irismeister", domainNameには"my-iris-123"を指定した例を使用している。
+```
+cat azuredeploy.parameters.json
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "adminUsername": {
+      "value": "irismeister"
+    },
+    "adminPassword": {
+      "value": "xxxxxx"
+    },
+    "domainName": {
+      "value": "my-iris-123"
+    },
+    "_secretsLocation": {
+      "value": "https://irismeister.blob.core.windows.net/"
+    },
+    "_secretsLocationSasToken": {
+        "value": "sp=r&st=2021..."
+    }
+  }
+}
+```
 
 ## デプロイ後のアクセス
 使用したデプロイ構成によりアクセス方法が異なる。  
@@ -98,6 +136,7 @@ IRISサーバはプライベートネットワーク上のVMにデプロイさ�
 |arbiternic	|Network interface|Japan East|Arbiter|
 |arbitervm	|Virtual machine|Japan East|Arbiter|
 |arbitervm_OsDisk_1_xxx	|Disk|Japan East|Arbiter|
+|ilb	|Load balancer	|Japan East|IRISミラー用の内部LB|
 |irisAvailabilitySet	|Availability set|Japan East|arbitervm,msvm0,slvm0|
 |jumpboxnic	|Network interface|Japan East||
 |jumpboxpublicIp	|Public IP address|Japan East|公開用IP|
@@ -108,6 +147,8 @@ IRISサーバはプライベートネットワーク上のVMにデプロイさ�
 |msvm0_disk2_xxx	|Disk|Japan East|プライマリ|
 |msvm0_disk3_xxx	|Disk|Japan East|プライマリ|
 |msvm0_OSDisk	|Disk|Japan East|プライマリ|
+|ngw	|NAT gateway	|Japan East|NAT-GW|
+|ngw-pubip	|Public IP address	|Japan East|NAT-GW用のパブリックIP|
 |slnic0	|Network interface|Japan East|バックアップ|
 |slvm0	|Virtual machine|Japan East|バックアップ|
 |slvm0_disk2_xxx	|Disk|Japan East|バックアップ|
@@ -180,16 +221,11 @@ http://localhost:8889/csp/sys/UtilHome.csp
 
 ## 補足
 
-### Azure Blob(container)
-本例ではIRISライセンスキーやキットなどの非公開ファイルは、非公開設定のAzure Blob(container)に格納している。
-Generate SASで作成したキー(Signing method:Account key)を_secretsLocationSasTokenに指定する。shell内から下記のようにwgetで取得している。
-```
-wget "${SECRETURL}blob/iris.key?${SECRETSASTOKEN}" -O iris.key
-```
-
 ### Fault Domain
 日本リージョンには、障害ドメイン(Fault Domain)は2個しかない。  
 https://github.com/MicrosoftDocs/azure-docs/blob/master/includes/managed-disks-common-fault-domain-region-list.md
+
+[Availability Zones](https://azure.microsoft.com/ja-jp/updates/general-availability-azure-availability-zones-in-japan-east/)の使用を検討しても良いかもしれない。
 
 
 ## デバッグ
@@ -213,28 +249,37 @@ jumpboxvm         10.0.0.4              52.185.171.9
 msvm0             10.0.1.5
 slvm0             10.0.1.6
 
-プライマリメンバからの応答
+動作確認のため、arbitervmから下記を実行する。  
+
+プライマリメンバに接続した場合の応答
+```bash
 irismeister@arbitervm:~$  echo `curl http://msvm0:52773/csp/bin/mirror_status.cxw -s`
 SUCCESS
-バックアップメンバからの応答
+```
+バックアップメンバに接続した場合の応答
+```bash
 irismeister@arbitervm:~$  echo `curl http://slvm0:52773/csp/bin/mirror_status.cxw -s`
 FAILED
+```
 
 ### LB動作確認
 
-templateでInternal LBを構成するとvmから外部接続できなくなる。(aptもwgetもできないため、vmの作成が失敗する)  
-https://jpaztech.github.io/blog/network/snat-options-for-azure-vm/
+ミラー構成用に内部Load Balancerをデプロイしている。下記の挙動となるため、NAT-GWを構成している。  
+(これをしないと、プライベートIPしかもたないVMがInternetにアウトバウンド接続できない。AWSと同じ挙動。)  
 https://docs.microsoft.com/ja-jp/azure/load-balancer/load-balancer-outbound-connections#how-does-default-snat-work
 
-Standard 内部 Load Balancer を使用する場合、SNAT のために一時 IP アドレスは使用されません。 この機能は、既定でセキュリティをサポートします。 この機能により、リソースによって使用されるすべての IP アドレスが構成可能になり、予約できるようになります。 Standard 内部 Load Balancer を使用するときに、インターネットへのアウトバウンド接続を実現するには、次を構成します。
-- インスタンス レベルのパブリック IP アドレス
-- VNet NAT
-- アウトバウンド規則が構成された Standard パブリック ロード バランサーへのバックエンド インスタンス。
+> Standard 内部 Load Balancer を使用する場合、SNAT のために一時 IP アドレスは使用されません。 この機能は、既定でセキュリティをサポートします。 この機能により、リソースによって使用されるすべての IP アドレスが構成可能になり、予約できるようになります。 Standard 内部 Load Balancer を使用するときに、インターネットへのアウトバウンド接続を実現するには、次を構成します。
+> - インスタンス レベルのパブリック IP アドレス
+> - VNet NAT
+> - アウトバウンド規則が構成された Standard パブリック ロード バランサーへのバックエンド インスタンス。
 
-> vmデプロイ後に、手動で、msvm0,slvm0をLBのBackend poolsに追加した場合は、なぜかNAT-GW無しでも外部接続できる模様。  
-以下のJDBC接続テストは、手動で追加した後に実行。  
+NAT-GW構成後のpublic ipは、NAT-GWのOutbound IPに一致するようになる。
+```bash
+irismeister@slvm0:~$ curl https://ipinfo.io/ip
+23.102.69.138
+```
 
-JDBCをLBに対して接続する。ミラーのアクティブノードに接続が行われる事の確認に使用する。
+ミラーのアクティブノードに接続が行われる事の確認のために、JDBCをLBに対して接続する。
 ```bash
 irismeister@jumpboxvm:~$ ssh irismeister@arbitervm
 irismeister@arbitervm:~$ sudo su -
@@ -244,9 +289,8 @@ Installer.cls    install_iris.sh              iris.service  stderr  vm-disk-util
 JDBCSample.java  intersystems-jdbc-3.2.0.jar  params.log    stdout
 root@arbitervm:/var/lib/waagent/custom-script/download/0# javac JDBCSample.java
 root@arbitervm:/var/lib/waagent/custom-script/download/0# java -cp .:intersystems-jdbc-3.2.0.jar JDBCSample
+Printing out contents of SELECT query:
+1, John, Smith
+2, Jane, Doe
+root@arbitervm:/var/lib/waagent/custom-script/download/0#
 ```
-
-恐らくNAT-GWが要る(AWSと同じ)。  
-NAT-GW構成後のpublic ipは、NAT-GWのOutbound IPに一致する。
-irismeister@slvm0:~$ curl https://ipinfo.io/ip
-23.102.69.138
