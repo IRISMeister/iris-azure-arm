@@ -67,7 +67,7 @@ cat azuredeploy.parameters.json
       "value": "irismeister"
     },
     "adminPassword": {
-      "value": "xxxxxx"
+      "value": "xxxxxx"  <==任意のパスワード用文字列を設定する
     },
     "domainName": {
       "value": "my-iris-123"
@@ -76,7 +76,7 @@ cat azuredeploy.parameters.json
       "value": "https://irismeister.blob.core.windows.net/"
     },
     "_secretsLocationSasToken": {
-        "value": "sp=r&st=2021..."
+        "value": "sp=r&st=2021..." <==正しい値を設定する
     }
   }
 }
@@ -279,7 +279,7 @@ irismeister@slvm0:~$ curl https://ipinfo.io/ip
 23.102.69.138
 ```
 
-ミラーのアクティブノードに接続が行われる事の確認のために、JDBCをLBに対して接続する。
+ミラーのアクティブノードに接続が行われる事を確認するために、JDBCをLBに対して接続する。
 ```bash
 irismeister@jumpboxvm:~$ ssh irismeister@arbitervm
 irismeister@arbitervm:~$ sudo su -
@@ -293,4 +293,8 @@ Printing out contents of SELECT query:
 1, John, Smith
 2, Jane, Doe
 root@arbitervm:/var/lib/waagent/custom-script/download/0#
+```
+IPアドレスを引数で指定可能(省略時値は10.0.1.4)。
+```
+java -cp .:intersystems-jdbc-3.2.0.jar JDBCSample 172.16.0.4
 ```
