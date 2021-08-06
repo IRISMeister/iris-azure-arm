@@ -4,8 +4,14 @@
 import java.sql.*;
 
 public class JDBCSample {
-    public static void main(String[] str) throws Exception {
-        String url = "jdbc:IRIS://10.0.1.4:51773/MYAPP";
+    public static void main(String args[]) throws Exception {
+        String ip="10.0.1.4";
+        if (args.length > 0){
+            ip=args[0];
+        }
+
+        String url = "jdbc:IRIS://"+ip+":51773/MYAPP";
+        System.out.println("Connecting to "+url);
 
         Class.forName("com.intersystems.jdbc.IRISDriver");
         Connection connection = DriverManager.getConnection(url,"_SYSTEM","sys");
