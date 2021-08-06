@@ -21,6 +21,11 @@
       "apiVersion": "2019-11-01",
       "type": "Microsoft.Network/virtualNetworks",
       "name": "[parameters('networkSettings').vnetName]",
+
+      "dependsOn": [
+        "[concat('Microsoft.Network/natGateways/', 'irismeister-ngw')]"
+      ],
+
       "location": "[parameters('location')]",
       "properties": {
         "addressSpace": {
@@ -38,7 +43,12 @@
           {
             "name": "[parameters('networkSettings').subnets.data.name]",
             "properties": {
-              "addressPrefix": "[parameters('networkSettings').subnets.data.prefix]"
+              "addressPrefix": "[parameters('networkSettings').subnets.data.prefix]",
+
+              "natGateway": {
+                "id": "[resourceId('Microsoft.Network/natGateways/', 'irismeister-ngw')]"
+              }
+
             }
           }
         ]
@@ -120,9 +130,43 @@
           }
         ]
       }
-    }
+    },
+    {
+      "type": "Microsoft.Network/publicIpAddresses",
+      "apiVersion": "2020-08-01",
+      "name": "irismeister-pubip",
+      "location": "[parameters('location')]",
+      "sku": {
+          "name": "Standard"
+      },
+      "properties": {
+          "publicIPAllocationMethod": "Dynamic"
+      }
+    },
+    {
+      "type": "Microsoft.Network/natGateways",
+      "apiVersion": "2019-09-01",
+      "name": "irismeister-ngw",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+          "[concat('Microsoft.Network/publicIpAddresses/', 'irismeister-pubip')]"
+      ],
+      "tags": {},
+      "sku": {
+          "name": "Standard"
+      },
+      "zones": [],
+      "properties": {
+          "publicIPAddresses": [
+              {
+                  "id": "[resourceId('Microsoft.Network/publicIpAddresses/', 'irismeister-pubip')]"
+              }
+          ],
+          "publicIPPrefixes": [],
+          "idleTimeoutInMinutes": 4
+      }
+  }
 
-    
 
   ],
   "outputs": {}
