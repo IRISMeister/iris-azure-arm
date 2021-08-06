@@ -84,10 +84,10 @@ chmod 777 /iris/journal1
 
 cp iris.service /etc/systemd/system/iris.service
 chmod 644 /etc/systemd/system/iris.service
-sudo systemctl daemon-reload &&
-sudo systemctl enable ISCAgent.service &&
-sudo systemctl start ISCAgent.service &&
-sudo systemctl enable iris &&
+sudo systemctl daemon-reload
+sudo systemctl enable ISCAgent.service
+sudo systemctl start ISCAgent.service
+sudo systemctl enable iris
 
 USERHOME=/home/$ISC_PACKAGE_MGRUSER
 # additional config if any
@@ -106,3 +106,5 @@ EOS
 
 ISC_CPF_MERGE_FILE=$USERHOME/merge.cpf iris start $ISC_PACKAGE_INSTANCENAME quietly
 # ToDo: should I restart by using systemctl?
+
+exit 0
