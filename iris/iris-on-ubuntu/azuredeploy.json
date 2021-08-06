@@ -217,7 +217,8 @@
       "name": "irisAvailabilitySet",
       "fdCount": 2,
       "udCount": 5
-    }
+    },
+    "loadBalancerName": "ilb"
   },
   "resources": [
     {
@@ -300,7 +301,7 @@
             "value": "[parameters('_secretsLocationSasToken')]"
           },
           "loadBalancerName": {
-            "value": "irismeister-ilb"
+            "value": "[variables('loadBalancerName')]"
           }
         }
       }
@@ -362,7 +363,7 @@
             "value": "[parameters('_secretsLocationSasToken')]"
           },
           "loadBalancerName": {
-            "value": "irismeister-ilb"
+            "value": "[variables('loadBalancerName')]"
           }
         }
       }

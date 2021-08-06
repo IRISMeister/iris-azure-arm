@@ -13,7 +13,7 @@
     }
   },
   "variables": {
-    "loadBalancerName": "irismeister-ilb",
+    "loadBalancerName": "ilb",
     "subnetRef": "[resourceId('Microsoft.Network/virtualNetworks/subnets', parameters('networkSettings').vnetName, parameters('networkSettings').subnets.data.name)]"
   },
   "resources": [
@@ -23,7 +23,7 @@
       "name": "[parameters('networkSettings').vnetName]",
 
       "dependsOn": [
-        "[concat('Microsoft.Network/natGateways/', 'irismeister-ngw')]"
+        "[concat('Microsoft.Network/natGateways/', 'ngw')]"
       ],
 
       "location": "[parameters('location')]",
@@ -46,7 +46,7 @@
               "addressPrefix": "[parameters('networkSettings').subnets.data.prefix]",
 
               "natGateway": {
-                "id": "[resourceId('Microsoft.Network/natGateways/', 'irismeister-ngw')]"
+                "id": "[resourceId('Microsoft.Network/natGateways/', 'ngw')]"
               }
 
             }
@@ -67,7 +67,6 @@
         "platformUpdateDomainCount": "[parameters('availabilitySetSettings').udCount]"
       }
     },
-
     {
       "type": "Microsoft.Network/loadBalancers",
       "apiVersion": "2020-06-01",
@@ -134,7 +133,7 @@
     {
       "type": "Microsoft.Network/publicIpAddresses",
       "apiVersion": "2020-08-01",
-      "name": "irismeister-pubip",
+      "name": "ngw-pubip",
       "location": "[parameters('location')]",
       "sku": {
           "name": "Standard"
@@ -146,10 +145,10 @@
     {
       "type": "Microsoft.Network/natGateways",
       "apiVersion": "2019-09-01",
-      "name": "irismeister-ngw",
+      "name": "ngw",
       "location": "[parameters('location')]",
       "dependsOn": [
-          "[concat('Microsoft.Network/publicIpAddresses/', 'irismeister-pubip')]"
+          "[concat('Microsoft.Network/publicIpAddresses/', 'ngw-pubip')]"
       ],
       "tags": {},
       "sku": {
@@ -159,15 +158,13 @@
       "properties": {
           "publicIPAddresses": [
               {
-                  "id": "[resourceId('Microsoft.Network/publicIpAddresses/', 'irismeister-pubip')]"
+                  "id": "[resourceId('Microsoft.Network/publicIpAddresses/', 'ngw-pubip')]"
               }
           ],
           "publicIPPrefixes": [],
           "idleTimeoutInMinutes": 4
       }
   }
-
-
   ],
   "outputs": {}
 }
