@@ -52,6 +52,13 @@ ClassMethod setupExt() As %Status
     Set params("AutheEnabled")=$ZHEX("7FF") ; Ebable O/S auth
     Set tSC=##class(Security.System).Modify(,.params)
     $$$ThrowOnError(tSC)
+
+    #; need "root" user to perform app consistent backup via pre/post script.
+    #; somehow sudo -u irisowner dosen't work with this.
+    #; https://docs.microsoft.com/ja-jp/azure/backup/backup-azure-linux-app-consistent
+    Set tSC=##class(Security.Users).Copy("SuperUser","root",,,,"sys")
+    $$$ThrowOnError(tSC)
+
   } Catch(e) {
 	  Set tSC=e.AsStatus()
   }
