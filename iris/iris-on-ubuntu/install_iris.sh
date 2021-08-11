@@ -108,10 +108,8 @@ then
   wget https://github.com/intersystems-community/iris-driver-distribution/raw/main/JDK18/intersystems-jdbc-3.2.0.jar
 
   echo "Initializing as Arbiter"
-  kit=ISCAgent-2021.1.0.215.0-lnxrhx64
+  kit=ISCAgent-2021.1.0.215.0-lnxubuntux64
   mkdir /tmp/irisdistr
-  exit 0
-
   pushd /tmp/irisdistr
   wget "${SECRETURL}blob/$kit.tar.gz?$SECRETSASTOKEN" -O $kit.tar.gz
 
