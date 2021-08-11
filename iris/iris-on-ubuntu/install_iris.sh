@@ -100,14 +100,6 @@ export MirrorArbiterIP=$ARBITERIP
 
 if [ "$NODETYPE" == "ARBITER" ];
 then
-  # get a jdbc driver for loadbalancer testing purpose
-  echo "Installing an ivp java program on Arbiter"
-
-  export DEBIAN_FRONTEND=noninteractive
-  apt-get update -y
-  apt-get install -y openjdk-8-jdk-headless
-  wget https://github.com/intersystems-community/iris-driver-distribution/raw/main/JDK18/intersystems-jdbc-3.2.0.jar
-
   echo "Initializing as Arbiter"
   kit=ISCAgent-2021.1.0.215.0-lnxubuntux64
   mkdir /tmp/irisdistr
@@ -124,6 +116,15 @@ END
   systemctl daemon-reload
   systemctl enable ISCAgent.service
   systemctl start ISCAgent.service
+
+  # get a jdbc driver for loadbalancer testing purpose
+  echo "Installing an ivp java program on Arbiter"
+
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update -y
+  apt-get install -y openjdk-8-jdk-headless
+  wget https://github.com/intersystems-community/iris-driver-distribution/raw/main/JDK18/intersystems-jdbc-3.2.0.jar
+
   exit 0
 fi
 
