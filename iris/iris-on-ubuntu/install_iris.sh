@@ -94,8 +94,6 @@ install_iris_service() {
 install_iris_server() {
 #!/bin/bash -e
 
-apt-get update -y
-
 export MirrorDBName='MYDB'
 #export MirrorArbiterIP='none'
 export MirrorArbiterIP=$ARBITERIP
@@ -103,7 +101,10 @@ export MirrorArbiterIP=$ARBITERIP
 if [ "$NODETYPE" == "ARBITER" ];
 then
   # get a jdbc driver for loadbalancer testing purpose
-  echo "compiling an ivp java program on Arbiter"
+  echo "Installing an ivp java program on Arbiter"
+
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update -y
   apt-get install -y openjdk-8-jdk-headless
   wget https://github.com/intersystems-community/iris-driver-distribution/raw/main/JDK18/intersystems-jdbc-3.2.0.jar
 
