@@ -85,8 +85,6 @@ echo "NOW=$now MASTERIP=$MASTERIP SUBNETADDRESS=$SUBNETADDRESS ARBITERIP=$ARBITE
 echo "SECRETURL=$SECRETURL SECRETSASTOKEN=$SECRETSASTOKEN" >> params.log
 
 install_iris_service() {
-	# Re-synchronize the package index files from their sources. An update should always be performed before an upgrade.
-	apt update -y
 
 	echo "Start installing IRIS..."
 	install_iris_server
@@ -96,6 +94,8 @@ install_iris_service() {
 install_iris_server() {
 #!/bin/bash -e
 
+apt-get update -y
+
 export MirrorDBName='MYDB'
 #export MirrorArbiterIP='none'
 export MirrorArbiterIP=$ARBITERIP
@@ -104,7 +104,7 @@ if [ "$NODETYPE" == "ARBITER" ];
 then
   # get a jdbc driver for loadbalancer testing purpose
   echo "compiling an ivp java program on Arbiter"
-  sudo apt install -y openjdk-8-jdk-headless
+  apt-get install -y openjdk-8-jdk-headless
   wget https://github.com/intersystems-community/iris-driver-distribution/raw/main/JDK18/intersystems-jdbc-3.2.0.jar
 
   echo "Initializing as Arbiter"
@@ -113,8 +113,8 @@ then
   pushd /tmp/irisdistr
   wget "${SECRETURL}blob/$kit.tar.gz?$SECRETSASTOKEN" -O $kit.tar.gz
 
-  tar -xvf $DISTR.tar.gz
-  cd $DISTR
+  tar -xvf $kit.tar.gz
+  cd $kit
   ./agentinstall << END
 1
 yes
