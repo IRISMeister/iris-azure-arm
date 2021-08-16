@@ -207,7 +207,7 @@ http://localhost:8889/csp/sys/UtilHome.csp
             status:       running, since Wed Aug  4 07:12:45 2021
             mirroring: Member Type = Failover; Status = Primary
             state:        ok
-            product:      InterSystems IRIS
+            product:      InterSystems IRISHealth
     irismeister@msvm0:~$
     ```
 
@@ -315,7 +315,7 @@ Configuration 'IRIS'   (default)
         datadir:      /usr/irissys
         conf file:    iris.cpf  (SuperServer port = 51773, WebServer = 52773)
         status:       down, last used Mon Aug 16 09:33:43 2021
-        product:      InterSystems IRIS
+        product:      InterSystems IRISHealth
 ```
 
 この時点で、同コマンドを再実行すると、同リクエストは新プライマリメンバ(旧バックアップメンバ)に到達するため成功する。
