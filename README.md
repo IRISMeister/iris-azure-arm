@@ -127,7 +127,9 @@ IRISサーバ用のVMにパブリックIPがアサインされるため直接接
     ```
 
 ### Mirrorの場合
-IRISサーバはプライベートネットワーク上のVMにデプロイされる。
+IRISサーバはプライベートネットワーク上のVMにデプロイされる。正常に動作した場合、15分ほどで完了。  
+![1](https://raw.githubusercontent.com/IRISMeister/doc-images/main/iris-azure-arm/deployment.png)
+
 アクセス用にJumpBoxがデプロイされるので、SSHポートフォワーディングを使用してIRISにアクセスする。
 
 指定したリソース下に下記が作成される。
@@ -221,24 +223,11 @@ http://localhost:8889/csp/sys/UtilHome.csp
 
 ## 補足
 
-### Fault Domain
+### 障害ドメイン
 日本リージョンには、障害ドメイン(Fault Domain)は2個しかない。  
 https://github.com/MicrosoftDocs/azure-docs/blob/master/includes/managed-disks-common-fault-domain-region-list.md
 
 [Availability Zones](https://azure.microsoft.com/ja-jp/updates/general-availability-azure-availability-zones-in-japan-east/)の使用を検討しても良いかもしれない。
-
-
-## デバッグ
-### ファイルのデプロイ先
-デプロイに使用されるファイル群は下記に存在する。stderr,stdout,params.logに実行ログなどが記録されている。  
-```bash
-irismeister@MyubuntuVM:~$ sudo su -
-root@MyubuntuVM:~# cd /var/lib/waagent/custom-script/download/0
-root@MyubuntuVM:/var/lib/waagent/custom-script/download/0# ls
-IRIS-2021.1.0.215.0-lnxubuntux64.tar.gz  install_iris.sh  iris.service  stderr
-Installer.cls                            iris.key         params.log    stdout
-root@MyubuntuVM:/var/lib/waagent/custom-script/download/0#
-```
 
 ### HealthProbe用のエンドポイント
 $ az vm list-ip-addresses --resource-group $rg --output table
@@ -262,10 +251,8 @@ irismeister@arbitervm:~$  echo `curl http://slvm0:52773/csp/bin/mirror_status.cx
 FAILED
 ```
 
-### LB動作確認
-
-ミラー構成用に内部Load Balancerをデプロイしている。下記の挙動となるため、NAT-GWを構成している。  
-(これをしないと、プライベートIPしかもたないVMがInternetにアウトバウンド接続できない。AWSと同じ挙動。)  
+### NAT-GW
+ミラー構成用に内部Load Balancerをデプロイしている。下記URLの挙動(プライベートIPしかもたないVMがInternetにアウトバウンド接続できない状態。AWSと同じ挙動)となるため、NAT-GWを構成している。  
 https://docs.microsoft.com/ja-jp/azure/load-balancer/load-balancer-outbound-connections#how-does-default-snat-work
 
 > Standard 内部 Load Balancer を使用する場合、SNAT のために一時 IP アドレスは使用されません。 この機能は、既定でセキュリティをサポートします。 この機能により、リソースによって使用されるすべての IP アドレスが構成可能になり、予約できるようになります。 Standard 内部 Load Balancer を使用するときに、インターネットへのアウトバウンド接続を実現するには、次を構成します。
@@ -275,26 +262,80 @@ https://docs.microsoft.com/ja-jp/azure/load-balancer/load-balancer-outbound-conn
 
 NAT-GW構成後のpublic ipは、NAT-GWのOutbound IPに一致するようになる。
 ```bash
+irismeister@msvm0:~$ curl https://ipinfo.io/ip
+23.102.69.138
+```
+```bash
 irismeister@slvm0:~$ curl https://ipinfo.io/ip
 23.102.69.138
 ```
+### 内部LB動作確認
+常にミラーのプライマリメンバに接続が行われる事を確認するために、JDBCアプリケーションをLBに対して接続する。
+> このJDBCアプリケーションは、同期対象に**なっていない**テーブルを作成、更新する
 
-ミラーのアクティブノードに接続が行われる事を確認するために、JDBCをLBに対して接続する。
 ```bash
 irismeister@jumpboxvm:~$ ssh irismeister@arbitervm
 irismeister@arbitervm:~$ sudo su -
 root@arbitervm:~# cd /var/lib/waagent/custom-script/download/0
-root@arbitervm:/var/lib/waagent/custom-script/download/0# ls
-Installer.cls    install_iris.sh              iris.service  stderr  vm-disk-utils-0.1.sh
-JDBCSample.java  intersystems-jdbc-3.2.0.jar  params.log    stdout
 root@arbitervm:/var/lib/waagent/custom-script/download/0# javac JDBCSample.java
 root@arbitervm:/var/lib/waagent/custom-script/download/0# java -cp .:intersystems-jdbc-3.2.0.jar JDBCSample
 Printing out contents of SELECT query:
 1, John, Smith
 2, Jane, Doe
-root@arbitervm:/var/lib/waagent/custom-script/download/0#
 ```
-IPアドレスを引数で指定可能(省略時値は10.0.1.4)。
+> 内部LBのIPアドレスを引数で指定可能(省略時値は10.0.1.4)。
+> ```
+> java -cp .:intersystems-jdbc-3.2.0.jar JDBCSample 172.16.0.4
+> ```
+
+同じコマンドを2回実行すると、同リクエストが同じサーバ(現プライマリメンバ)に到達するためエラーが発生する。
 ```
-java -cp .:intersystems-jdbc-3.2.0.jar JDBCSample 172.16.0.4
+root@arbitervm:/var/lib/waagent/custom-script/download/0# java -cp .:intersystems-jdbc-3.2.0.jar JDBCSample
+Connecting to jdbc:IRIS://10.0.1.4:51773/MYAPP
+Exception in thread "main" java.sql.SQLException: [SQLCODE: <-201>:<Table or view name not unique>]
+[Location: <ServerLoop>]
+[%msg: <Table 'SQLUser.People' already exists>]
+        at com.intersystems.jdbc.IRISConnection.getServerError(IRISConnection.java:918)
+        at com.intersystems.jdbc.IRISConnection.processError(IRISConnection.java:1072)
+        at com.intersystems.jdbc.InStream.readMessage(InStream.java:204)
+        at com.intersystems.jdbc.InStream.readMessage(InStream.java:171)
+        at com.intersystems.jdbc.IRISStatement.sendDirectUpdateRequest(IRISStatement.java:444)
+        at com.intersystems.jdbc.IRISStatement.Update(IRISStatement.java:425)
+        at com.intersystems.jdbc.IRISStatement.executeUpdate(IRISStatement.java:358)
+        at JDBCSample.main(JDBCSample.java:26)
+```
+
+現プライマリメンバのIRISを停止する。
+```
+irismeister@msvm0:~$ sudo -u irisowner iris stop iris quietly
+irismeister@msvm0:~$ iris list
+Configuration 'IRIS'   (default)
+        directory:    /usr/irissys
+        versionid:    2021.1.0.215.0
+        datadir:      /usr/irissys
+        conf file:    iris.cpf  (SuperServer port = 51773, WebServer = 52773)
+        status:       down, last used Mon Aug 16 09:33:43 2021
+        product:      InterSystems IRIS
+```
+
+この時点で、同コマンドを再実行すると、同リクエストは新プライマリメンバ(旧バックアップメンバ)に到達するため成功する。
+```
+root@arbitervm:/var/lib/waagent/custom-script/download/0# java -cp .:intersystems-jdbc-3.2.0.jar JDBCSample
+Connecting to jdbc:IRIS://10.0.1.4:51773/MYAPP
+Printing out contents of SELECT query:
+1, John, Smith
+2, Jane, Doe
+```
+
+## デバッグ
+### ファイルのデプロイ先
+デプロイに使用されるファイル群は下記に存在する。stderr,stdout,params.logに実行ログなどが記録されている。
+> 実運用上、params.logにあるようなクレデンシャル情報をファイル保存することは好ましくないが、ここでは利便性を優先  
+```bash
+irismeister@MyubuntuVM:~$ sudo su -
+root@MyubuntuVM:~# cd /var/lib/waagent/custom-script/download/0
+root@MyubuntuVM:/var/lib/waagent/custom-script/download/0# ls
+IRIS-2021.1.0.215.0-lnxubuntux64.tar.gz  install_iris.sh  iris.service  stderr
+Installer.cls                            iris.key         params.log    stdout
+root@MyubuntuVM:/var/lib/waagent/custom-script/download/0#
 ```
