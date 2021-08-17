@@ -27,9 +27,9 @@ https://github.com/Azure/azure-quickstart-templates
 > Public DNS名はユニークである必要がある
 
 ## 事前準備
-事前にIRISライセンスキー及びキットを用意し、**非公開設定**のAzure Blobにアップロードする(このURLをパラメータの_secretsLocationで指定する)。  
-Generate SASでキー(Signing method:Account key)を作成(パラメータの_secretsLocationSasTokenで指定する)。  
-インストーラshell内からは、下記のようにwgetで取得している。ただし  
+1. 事前にIRISライセンスキーファイル(iris.key)及びキット(IRISHealth-2021.1.0.215.0-lnxubuntux64.tar.gzなど)を用意し、**非公開設定**のAzure Blobにアップロードする(このURLをパラメータの_secretsLocationで指定する)。  
+2. Generate SASでキー(Signing method:Account key)を作成(パラメータの_secretsLocationSasTokenで指定する)。  
+3. インストーラshell内からは、下記のようにwgetで取得している。ただし  
 _secretsLocation => SECRETURL  
 _secretsLocationSasToken => SECRETSASTOKEN  
 ```
@@ -55,8 +55,7 @@ wget "${SECRETURL}blob/iris.key?${SECRETSASTOKEN}" -O iris.key
     vi azuredeploy.parameters.json
     ./deploy.sh
     ```
-
-以後、adminUsernameには"irismeister", domainNameには"my-iris-123"を指定した例を使用している。
+以下、編集例  
 ```
 cat azuredeploy.parameters.json
 {
@@ -73,7 +72,7 @@ cat azuredeploy.parameters.json
       "value": "my-iris-123"
     },
     "_secretsLocation": {
-      "value": "https://irismeister.blob.core.windows.net/"
+      "value": "https://irismeister.blob.core.windows.net/"  <==正しいURLを設定する
     },
     "_secretsLocationSasToken": {
         "value": "sp=r&st=2021..." <==正しい値を設定する
@@ -81,6 +80,8 @@ cat azuredeploy.parameters.json
   }
 }
 ```
+
+> 以後、上記編集例に習い、adminUsernameには"irismeister", domainNameには"my-iris-123"を指定した例を使用している。
 
 ## デプロイ後のアクセス
 使用したデプロイ構成によりアクセス方法が異なる。  
@@ -135,7 +136,7 @@ IRISサーバはプライベートネットワーク上のVMにデプロイさ�
 指定したリソース下に下記が作成される。
 |NAME|	TYPE|	LOCATION|備考|
 |--|--|--|--|
-|arbiternic	|Network interface|Japan East|Arbiter|
+|arbiternic	|Network interface|Japan East|Arbiter,10.0.1.10固定|
 |arbitervm	|Virtual machine|Japan East|Arbiter|
 |arbitervm_OsDisk_1_xxx	|Disk|Japan East|Arbiter|
 |ilb	|Load balancer	|Japan East|IRISミラー用の内部LB|
@@ -144,14 +145,14 @@ IRISサーバはプライベートネットワーク上のVMにデプロイさ�
 |jumpboxpublicIp	|Public IP address|Japan East|公開用IP|
 |jumpboxvm	|Virtual machine|Japan East||
 |jumpboxvm_OsDisk_1_xxx	|Disk|Japan East||
-|msnic0	|Network interface|Japan East|プライマリ|
+|msnic0	|Network interface|Japan East|プライマリ,10.0.1.11固定|
 |msvm0	|Virtual machine|Japan East|プライマリ|
 |msvm0_disk2_xxx	|Disk|Japan East|プライマリ|
 |msvm0_disk3_xxx	|Disk|Japan East|プライマリ|
 |msvm0_OSDisk	|Disk|Japan East|プライマリ|
 |ngw	|NAT gateway	|Japan East|NAT-GW|
 |ngw-pubip	|Public IP address	|Japan East|NAT-GW用のパブリックIP|
-|slnic0	|Network interface|Japan East|バックアップ|
+|slnic0	|Network interface|Japan East|バックアップ,10.0.1.12固定|
 |slvm0	|Virtual machine|Japan East|バックアップ|
 |slvm0_disk2_xxx	|Disk|Japan East|バックアップ|
 |slvm0_disk3_xxx	|Disk|Japan East|バックアップ|
@@ -227,18 +228,21 @@ http://localhost:8889/csp/sys/UtilHome.csp
 日本リージョンには、障害ドメイン(Fault Domain)は2個しかない。  
 https://github.com/MicrosoftDocs/azure-docs/blob/master/includes/managed-disks-common-fault-domain-region-list.md
 
-[Availability Zones](https://azure.microsoft.com/ja-jp/updates/general-availability-azure-availability-zones-in-japan-east/)の使用を検討しても良いかもしれない。
+より可用性の高い[Availability Zones](https://azure.microsoft.com/ja-jp/updates/general-availability-azure-availability-zones-in-japan-east/)の使用を検討しても良いかもしれない。
 
 ### HealthProbe用のエンドポイント
+Probe対象は、下記で表示されるmsvm0,slvm0のPrivateIPAddresses。
+```bash
 $ az vm list-ip-addresses --resource-group $rg --output table
 VirtualMachine    PrivateIPAddresses    PublicIPAddresses
 ----------------  --------------------  -------------------
-arbitervm         10.0.1.4
+arbitervm         10.0.1.10
 jumpboxvm         10.0.0.4              52.185.171.9
-msvm0             10.0.1.5
-slvm0             10.0.1.6
+msvm0             10.0.1.11
+slvm0             10.0.1.12
+```
 
-動作確認のため、arbitervmから下記を実行する。  
+エンドポイントの動作確認のため、arbitervmから下記を実行する。  
 
 プライマリメンバに接続した場合の応答
 ```bash
