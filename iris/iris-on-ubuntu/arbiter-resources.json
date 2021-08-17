@@ -54,7 +54,7 @@
           {
             "name": "ipconfig1",
             "properties": {
-              "privateIPAddress": "10.0.0.10",
+              "privateIPAddress": "10.0.1.10",
               "privateIPAllocationMethod": "Static",
               "subnet": {
                 "id": "[variables('subnetRef')]"
