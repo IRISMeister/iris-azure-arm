@@ -127,6 +127,10 @@
             "type": "Microsoft.Network/publicIPAddresses",
             "name": "[variables('publicIPAddressName')]",
             "location": "[parameters('location')]",
+            "sku": {
+                "name": "Basic",
+                "tier": "Regional"
+            },
             "zones": [
                 "[parameters('zone')]"
             ],            
