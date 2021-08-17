@@ -55,6 +55,18 @@
                 "description": "SSH Key or password for the Virtual Machine. SSH key is recommended."
             }
         },
+        "zone": {
+            "type": "string",
+            "defaultValue": "3",
+            "allowedValues": [
+              "1",
+              "2",
+              "3"
+            ],
+            "metadata": {
+              "description": "Zone number for the virtual machine"
+            }
+        },        
         "_artifactsLocation": {
             "type": "string",
             "metadata": {
@@ -115,6 +127,9 @@
             "type": "Microsoft.Network/publicIPAddresses",
             "name": "[variables('publicIPAddressName')]",
             "location": "[parameters('location')]",
+            "zones": [
+                "[parameters('zone')]"
+            ],            
             "properties": {
                 "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
                 "dnsSettings": {
@@ -221,6 +236,9 @@
             "location": "[parameters('location')]",
             "dependsOn": [
                 "[resourceId('Microsoft.Network/networkInterfaces/', variables('nicName'))]"
+            ],
+            "zones": [
+                "[parameters('zone')]"
             ],
             "properties": {
                 "hardwareProfile": {

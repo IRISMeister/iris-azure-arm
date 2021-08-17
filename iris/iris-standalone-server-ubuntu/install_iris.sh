@@ -6,7 +6,8 @@ SECRETSASTOKEN=$2
 echo "${SECRETURL}blob/iris.key?${SECRETSASTOKEN}" >> params.log
 
 # ++ edit here for optimal settings ++
-kit=IRIS-2021.1.0.215.0-lnxubuntux64
+#kit=IRIS-2021.1.0.215.0-lnxubuntux64 # vanilla IRIS
+kit=IRISHealth-2021.1.0.215.0-lnxubuntux64
 password=sys
 ssport=51773
 webport=52773
