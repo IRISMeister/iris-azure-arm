@@ -294,6 +294,9 @@
           "dbType": {
             "value": "MASTER"
           },
+          "privateIPAddress" : {
+            "value": "10.0.1.11"
+          },
           "_secretsLocation": {
             "value": "[parameters('_secretsLocation')]"
           },
@@ -355,6 +358,9 @@
           },
           "dbType": {
             "value": "SLAVE"
+          },
+          "privateIPAddress" : {
+            "value": "10.0.1.12"
           },
           "_secretsLocation": {
             "value": "[parameters('_secretsLocation')]"

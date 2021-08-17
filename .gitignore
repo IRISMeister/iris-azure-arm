@@ -4,3 +4,4 @@ iris/iris-standalone-server-ubuntu/azuredeploy.parameters.json
 iris/lb
 iris/lb-test
 iris/nat-gw
+iris/work
