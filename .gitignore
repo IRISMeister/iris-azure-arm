@@ -6,3 +6,4 @@ iris/lb-test
 iris/nat-gw
 iris/work
 iris/availabilityZone
+iris/iris-standalone-server-ubuntu/addrole.json

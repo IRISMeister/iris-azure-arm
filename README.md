@@ -37,10 +37,11 @@ _secretsLocationSasToken => SECRETSASTOKEN
 ```
 wget "${SECRETURL}blob/iris.key?${SECRETSASTOKEN}" -O iris.key
 ```
+4. (オプション)Azure CLIをインストール、セットアップ
 
 ## デプロイ方法
-- Azureポータルを使用する場合は、上部のDeploy to Azureリンクを使用してDeploymentを作成。パラメータに値を環境に応じた設定する。
-- az cliを使用する場合(お勧め)は、同梱のdeploy.shを使用。
+- Azureポータルを使用する場合は、上部のDeploy to Azureリンクを使用してDeploymentを作成。パラメータに環境に応じた値を設定する。
+- Azure CLIを使用する場合(お勧め)は、同梱のdeploy.shを使用。
     事前に、下記の要領でパラメータ用のテンプレート(azuredeploy.parameters.json)を作成し、環境に応じた編集をする。  
 
     スタンドアロン構成の場合
@@ -102,7 +103,7 @@ USER>
 
 ```
 
-### StandAloneの場合
+### スタンドアロン構成の場合
 IRISサーバ用のVMにパブリックIPがアサインされるため直接接続が可能。  
 > ポート22(SSH)及び52773(IRIS管理ポータル用のapache)が公開されるので注意
 
@@ -237,7 +238,7 @@ http://localhost:8889/csp/sys/UtilHome.csp
 日本リージョンには、障害ドメイン(Fault Domain)は2個しかない。  
 https://github.com/MicrosoftDocs/azure-docs/blob/master/includes/managed-disks-common-fault-domain-region-list.md
 
-より可用性の高い[Availability Zones](https://azure.microsoft.com/ja-jp/updates/general-availability-azure-availability-zones-in-japan-east/)の使用を検討しても良いかもしれない。
+より可用性の高い[Availability Zones](https://azure.microsoft.com/ja-jp/updates/general-availability-azure-availability-zones-in-japan-east/)の使用を検討しても良いかもしれない。同期ミラーリング使用時はサーバ間のネットワーク遅延の拡大(それに伴うパフォーマンスへの悪影響)に留意が必要。
 
 ### HealthProbe用のエンドポイント
 Probe対象は、下記で表示されるmsvm0,slvm0のPrivateIPAddresses。
