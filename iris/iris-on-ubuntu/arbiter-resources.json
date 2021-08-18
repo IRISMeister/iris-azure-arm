@@ -79,7 +79,7 @@
         "[parameters('zone')]"
       ],
       "properties": {
-        "availabilitySet": {
+        "___availabilitySet": {
           "id": "[resourceId('Microsoft.Compute/availabilitySets', parameters('machineSettings').availabilitySet)]"
         },
         "hardwareProfile": {
