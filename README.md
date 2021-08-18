@@ -1,14 +1,16 @@
-# iris
+# IRISをAzureにデプロイ 
 スタンドアロン構成のデプロイ  
 [![Deploy To Azure Standalone](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FIRISMeister%2Firis-azure-arm%2Fmain%2Firis%2Firis-standalone-server-ubuntu%2Fazuredeploy.json)
+[![Visualize](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/visualizebutton.svg?sanitize=true)](http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2FIRISMeister%2Firis-azure-arm%2Fmain%2Firis%2Firis-standalone-server-ubuntu%2Fazuredeploy.json)
 
-ミラー構成のデプロイ  
-[![Deploy To Azure Mirror](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FIRISMeister%2Firis-azure-arm%2Fmain%2Firis%2Firis-on-ubuntu%2Fazuredeploy.json)  
-
+ミラーリング構成のデプロイ  
+[![Deploy To Azure Mirror](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FIRISMeister%2Firis-azure-arm%2Fmain%2Firis%2Firis-on-ubuntu%2Fazuredeploy.json)
 [![Visualize](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/visualizebutton.svg?sanitize=true)](http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2FIRISMeister%2Firis-azure-arm%2Fmain%2Firis%2Firis-on-ubuntu%2Fazuredeploy.json)
 
-下記サイト(特に、[postgre](https://github.com/Azure/azure-quickstart-templates/tree/master/application-workloads/postgre))を参考にさせていただきました。  
-https://github.com/Azure/azure-quickstart-templates
+テスト目的のIRIS環境(スタンドアロン構成及び同期ミラーリング構成)をデプロイすることを目的としています。プロダクション用途には使用しないでください。
+
+[こちら](https://github.com/Azure/azure-quickstart-templates)のサイト(特に、[postgre](https://github.com/Azure/azure-quickstart-templates/tree/master/application-workloads/postgre))を参考にさせていただきました。  
+
 
 ## パラメータ一覧
 
@@ -29,7 +31,7 @@ https://github.com/Azure/azure-quickstart-templates
 ## 事前準備
 1. 事前にIRISライセンスキーファイル(iris.key)及びキット(IRISHealth-2021.1.0.215.0-lnxubuntux64.tar.gzなど)を用意し、**非公開設定**のAzure Blobにアップロードする(このURLをパラメータの_secretsLocationで指定する)。  
 2. Generate SASでキー(Signing method:Account key)を作成(パラメータの_secretsLocationSasTokenで指定する)。  
-3. インストーラshell内からは、下記のようにwgetで取得している。ただし  
+3. install_iris.shl内から、下記のようにwgetで取得している。ただし  
 _secretsLocation => SECRETURL  
 _secretsLocationSasToken => SECRETSASTOKEN  
 ```
@@ -38,24 +40,24 @@ wget "${SECRETURL}blob/iris.key?${SECRETSASTOKEN}" -O iris.key
 
 ## デプロイ方法
 - Azureポータルを使用する場合は、上部のDeploy to Azureリンクを使用してDeploymentを作成。パラメータに値を環境に応じた設定する。
-- az cliを使用する場合は、同梱のdeploy.shを使用。
-    事前に、下記の要領でパラメータ用のテンプレートを作成し、環境に応じた編集をする。  
+- az cliを使用する場合(お勧め)は、同梱のdeploy.shを使用。
+    事前に、下記の要領でパラメータ用のテンプレート(azuredeploy.parameters.json)を作成し、環境に応じた編集をする。  
 
-    StandAloneの場合
+    スタンドアロン構成の場合
     ```bash
     cd iris-standalone-server-ubuntu
     cp azuredeploy.parameters.template.json azuredeploy.parameters.json
     vi azuredeploy.parameters.json
     ./deploy.sh
     ```
-    Mirrorの場合
+    ミラーリング構成の場合
     ```bash
     cd iris-on-ubuntu
     cp azuredeploy.parameters.template.json azuredeploy.parameters.json
     vi azuredeploy.parameters.json
     ./deploy.sh
     ```
-以下、編集例  
+    以下、編集例  
 ```
 cat azuredeploy.parameters.json
 {
@@ -66,16 +68,16 @@ cat azuredeploy.parameters.json
       "value": "irismeister"
     },
     "adminPassword": {
-      "value": "xxxxxx"  <==任意のパスワード用文字列を設定する
+      "value": "abcdEFG123"  <==任意のパスワード用文字列を設定する
     },
     "domainName": {
       "value": "my-iris-123"
     },
     "_secretsLocation": {
-      "value": "https://irismeister.blob.core.windows.net/"  <==正しいURLを設定する
+      "value": "https://irismeister.blob.core.windows.net/"  <==Azure BlobのURLを設定する
     },
     "_secretsLocationSasToken": {
-        "value": "sp=r&st=2021..." <==正しい値を設定する
+        "value": "sp=r&st=2021..." <==正しいSAS Tokenを設定する
     }
   }
 }
@@ -104,7 +106,7 @@ USER>
 IRISサーバ用のVMにパブリックIPがアサインされるため直接接続が可能。  
 > ポート22(SSH)及び52773(IRIS管理ポータル用のapache)が公開されるので注意
 
-指定したリソース下に下記が作成される。
+指定したリソースグループ下に下記が作成される。
 |NAME|	TYPE|	LOCATION|
 |--|--|--|
 |myNSG	|Network security group	|Japan East|
@@ -127,13 +129,14 @@ IRISサーバ用のVMにパブリックIPがアサインされるため直接接
     ssh -i my-azure-keypair.pem irismeister@my-iris-123.japaneast.cloudapp.azure.com
     ```
 
-### Mirrorの場合
+### ミラーリング構成の場合
 IRISサーバはプライベートネットワーク上のVMにデプロイされる。正常に動作した場合、15分ほどで完了。  
 ![1](https://raw.githubusercontent.com/IRISMeister/doc-images/main/iris-azure-arm/deployment.png)
 
-アクセス用にJumpBoxがデプロイされるので、SSHポートフォワーディングを使用してIRISにアクセスする。
 
-指定したリソース下に下記が作成される。
+
+指定したリソースグループ下に下記が作成される。
+
 |NAME|	TYPE|	LOCATION|備考|
 |--|--|--|--|
 |arbiternic	|Network interface|Japan East|Arbiter,10.0.1.10固定|
@@ -159,6 +162,10 @@ IRISサーバはプライベートネットワーク上のVMにデプロイさ�
 |slvm0_OSDisk	|Disk|Japan East|バックアップ|
 |vnet	|Virtual network|Japan East|バックアップ|
 
+
+
+プライベートネットワーク上のVMアクセス用にJumpBoxがデプロイされるので、SSHポートフォワーディングを使用してIRISにアクセスする。
+
 bash端末((Windows上のGit bashなどでも可)を2個開き、下記を実行する。
 
 端末1
@@ -174,11 +181,14 @@ ssh -L 8889:slvm0:52773 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/n
 ```
 
 例) 
+端末1
 ```bash
 ssh -L 8888:msvm0:52773 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
 irismeister@my-iris-123.japaneast.cloudapp.azure.com
 irismeister@jumpboxvm:~$
-
+```
+端末2
+```bash
 ssh -L 8889:slvm0:52773 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null \
 irismeister@my-iris-123.japaneast.cloudapp.azure.com
 irismeister@jumpboxvm:~$
@@ -194,12 +204,12 @@ http://localhost:8889/csp/sys/UtilHome.csp
     プライマリサーバへは端末1から。パスワードは[adminPassword]で指定したもの。
     ```bash
     [adminUsername]@jumpboxvm:~$ ssh [adminUsername]@msvm0
-
+    
     例)
     irismeister@jumpboxvm:~$ ssh irismeister@msvm0
     irismeister@msvm0:~$
     irismeister@msvm0:~$ iris list
-
+    
     Configuration 'IRIS'   (default)
             directory:    /usr/irissys
             versionid:    2021.1.0.215.0
@@ -215,11 +225,10 @@ http://localhost:8889/csp/sys/UtilHome.csp
     バックアップサーバへは端末2から。パスワードは[adminPassword]で指定したもの。
     ```bash
     [adminUsername]@jumpboxvm:~$ ssh [adminUsername]@slvm0
-
+    
     例)
     irismeister@jumpboxvm:~$ ssh irismeister@slvm0
     irismeister@slvm0:~$
-    irismeister@slvm0:~$ iris list
     ```
 
 ## 補足
@@ -330,6 +339,37 @@ Printing out contents of SELECT query:
 1, John, Smith
 2, Jane, Doe
 ```
+
+### 可用性ゾーンへの変更
+arbiter-resources.json及びdatabase-resources.jsonを修正することで、可用性ゾーンへのデプロイに変更可能。
+1. "properties"の"availabilitySet"を削除
+2. "zones"を追加
+
+変更後のarbiter-resources.jsonの例
+```
+"dependsOn": [
+  "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+],
+"zones": [
+  "[parameters('machineSettings').zone]"
+],
+"properties": {
+  "hardwareProfile": {
+    "vmSize": "[parameters('vmSize')]"
+  },
+```
+
+## カスタマイズ手順
+本稿はARMテンプレートやインストーラをGitHubの公開レポジトリに配置することを前提にしている(それゆえ_artifactsLocationSasTokenは未使用)。Azure Blobに配置することも可能だが、本稿では触れない。
+
+1. 自前のGitHubレポジトリ(公開)を作成する
+2. 本レポジトリをcloneしたものをベースに修正を加える
+3. deploy.shの下記のuriを自前のGitHubレポを差すように修正する
+```
+  --template-uri "https://raw.githubusercontent.com/IRISMeister/iris-azure-arm/main/iris/iris-on-ubuntu/azuredeploy.json" \
+```
+4. 自前のGitHubレポジトリにpush
+5. deploy.shを実行
 
 ## デバッグ
 ### ファイルのデプロイ先

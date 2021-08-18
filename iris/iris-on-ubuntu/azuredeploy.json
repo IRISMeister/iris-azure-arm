@@ -282,7 +282,8 @@
               "diskCount": "[variables('deploymentSize')[parameters('tshirtSize')].diskCount]",
               "diskSize": "[variables('deploymentSize')[parameters('tshirtSize')].diskSize]",
               "vmCount": 1,
-              "availabilitySet": "[variables('availabilitySetSettings').name]"
+              "availabilitySet": "[variables('availabilitySetSettings').name]",
+              "zone": "2"
             }
           },
           "masterIpAddress": {
@@ -347,7 +348,8 @@
               "diskCount": "[variables('deploymentSize')[parameters('tshirtSize')].diskCount]",
               "diskSize": "[variables('deploymentSize')[parameters('tshirtSize')].diskSize]",
               "vmCount": "[variables('deploymentSize')[parameters('tshirtSize')].slaveCount]",
-              "availabilitySet": "[variables('availabilitySetSettings').name]"
+              "availabilitySet": "[variables('availabilitySetSettings').name]",
+              "zone": "3"
             }
           },
           "masterIpAddress": {
@@ -413,7 +415,8 @@
           },
           "machineSettings": {
             "value": {
-              "availabilitySet": "[variables('availabilitySetSettings').name]"
+              "availabilitySet": "[variables('availabilitySetSettings').name]",
+              "zone": "1"
             }
           },
           "masterIpAddress": {
