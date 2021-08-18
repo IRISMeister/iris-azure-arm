@@ -26,6 +26,9 @@
     "location": {
       "type": "string"
     },
+    "zone": {
+      "type": "string"
+    },
     "_secretsLocation": {
       "type": "string"
     },
@@ -71,6 +74,9 @@
       "location": "[parameters('location')]",
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+      ],
+      "zones": [
+        "[parameters('zone')]"
       ],
       "properties": {
         "availabilitySet": {

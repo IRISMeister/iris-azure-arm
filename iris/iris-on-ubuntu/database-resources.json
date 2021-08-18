@@ -32,6 +32,9 @@
     "privateIPAddress": {
       "type": "string"
     },
+    "zone": {
+      "type": "string"
+    },
     "_secretsLocation": {
       "type": "string"
     },
@@ -90,6 +93,9 @@
       "location": "[parameters('location')]",
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('nicName'), copyindex()))]"
+      ],
+      "zones": [
+        "[parameters('zone')]"
       ],
       "copy": {
         "name": "vmCopyLoop",
