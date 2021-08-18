@@ -102,9 +102,6 @@
         "count": "[variables('vmCount')]"
       },
       "properties": {
-        "___availabilitySet": {
-          "id": "[resourceId('Microsoft.Compute/availabilitySets', parameters('machineSettings').availabilitySet)]"
-        },
         "hardwareProfile": {
           "vmSize": "[parameters('machineSettings').vmSize]"
         },

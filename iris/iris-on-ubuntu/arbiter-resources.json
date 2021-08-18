@@ -79,9 +79,6 @@
         "[parameters('zone')]"
       ],
       "properties": {
-        "___availabilitySet": {
-          "id": "[resourceId('Microsoft.Compute/availabilitySets', parameters('machineSettings').availabilitySet)]"
-        },
         "hardwareProfile": {
           "vmSize": "[parameters('vmSize')]"
         },
