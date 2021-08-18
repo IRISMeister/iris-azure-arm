@@ -245,6 +245,9 @@
             "zones": [
                 "[parameters('zone')]"
             ],
+            "identity": {
+                "type": "systemAssigned"
+            },
             "properties": {
                 "hardwareProfile": {
                     "vmSize": "[parameters('vmSize')]"
