@@ -26,9 +26,6 @@
     "location": {
       "type": "string"
     },
-    "zone": {
-      "type": "string"
-    },
     "_secretsLocation": {
       "type": "string"
     },
@@ -75,10 +72,10 @@
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
       ],
-      "zones": [
-        "[parameters('zone')]"
-      ],
       "properties": {
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', parameters('machineSettings').availabilitySet)]"
+        },
         "hardwareProfile": {
           "vmSize": "[parameters('vmSize')]"
         },

@@ -32,9 +32,6 @@
     "privateIPAddress": {
       "type": "string"
     },
-    "zone": {
-      "type": "string"
-    },
     "_secretsLocation": {
       "type": "string"
     },
@@ -94,14 +91,14 @@
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkInterfaces', concat(variables('nicName'), copyindex()))]"
       ],
-      "zones": [
-        "[parameters('zone')]"
-      ],
       "copy": {
         "name": "vmCopyLoop",
         "count": "[variables('vmCount')]"
       },
       "properties": {
+        "availabilitySet": {
+          "id": "[resourceId('Microsoft.Compute/availabilitySets', parameters('machineSettings').availabilitySet)]"
+        },
         "hardwareProfile": {
           "vmSize": "[parameters('machineSettings').vmSize]"
         },

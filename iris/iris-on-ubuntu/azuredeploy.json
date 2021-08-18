@@ -297,9 +297,6 @@
           "privateIPAddress" : {
             "value": "10.0.1.11"
           },
-          "zone": {
-            "value": "2"
-          },
           "_secretsLocation": {
             "value": "[parameters('_secretsLocation')]"
           },
@@ -365,9 +362,6 @@
           "privateIPAddress" : {
             "value": "10.0.1.12"
           },
-          "zone": {
-            "value": "3"
-          },
           "_secretsLocation": {
             "value": "[parameters('_secretsLocation')]"
           },
@@ -427,9 +421,6 @@
           },
           "dbType": {
             "value": "ARBITER"
-          },
-          "zone": {
-            "value": "1"
           },
           "_secretsLocation": {
             "value": "[parameters('_secretsLocation')]"
