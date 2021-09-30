@@ -86,6 +86,14 @@ cat azuredeploy.parameters.json
 
 > 以後、上記編集例に習い、adminUsernameには"irismeister", domainNameには"my-iris-123"を指定した例を使用している。
 
+
+## デプロイの完全削除
+リソースグループごと削除します。リソースグループ名はdeploy.shでrgに定義しています。
+```bash
+$ export rg=IRIS-Group
+$ az group delete --name $rg --yes
+```
+
 ## デプロイ後のアクセス
 使用したデプロイ構成によりアクセス方法が異なる。  
 
